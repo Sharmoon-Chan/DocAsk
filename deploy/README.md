@@ -1,9 +1,9 @@
-# ExoBrain production deployment
+# 问档 DocAsk production deployment
 
 Both access modes remain available:
 
-- [Guest access / 游客免登录](https://exobrain.sharmoon.cc.cd/)
-- [Account and password / 账号登录](https://exobrain.sharmoon.cc.cd/admin/)
+- [Guest access / 游客免登录](https://docask.sharmoon.cc.cd/)
+- [Account and password / 账号登录](https://docask.sharmoon.cc.cd/admin/)
 
 The knowledge-base privacy release uses application image
 `exobrain:20261016-kb-privacy`, frontend release `20261016-kb-privacy`, Java 21,

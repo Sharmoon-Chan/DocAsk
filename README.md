@@ -1,16 +1,20 @@
-# ExoBrain
+# 问档 DocAsk
 
 基于 Spring AI 的 Java Agent 系统。核心是一个 **Think-Execute 循环 + 状态机**：模型决定下一步动作，系统执行工具并回填结果，直到交付答复、发生错误或达到步骤上限。
 
 技术栈：Java 21 · Spring Boot 3.5.8 · Spring AI 1.1.0 · PostgreSQL 17 + pgvector · MyBatis · React 19 + TypeScript + Ant Design
 
+> **名称说明**：产品对外名称是 **问档 DocAsk**。仓库历史代号、数据库名、表前缀（`exobrain_*`）、
+> 环境变量（`EXOBRAIN_IT_*`）、Cookie、部署目录 `/opt/exobrain` 与镜像标签仍沿用 `exobrain`，
+> 这些是内部标识，改名需要数据迁移与停机，未随本次改名一起调整。
+
 ## 在线入口：游客免登录与账号密码登录
 
 | 模式 | 入口 | 访问范围 |
 | --- | --- | --- |
-| 游客免登录 | [公开体验](https://exobrain.sharmoon.cc.cd/) | 指定演示 Agent、公开知识库、当前浏览器的个人体验历史及只读示例对话 |
-| 普通用户登录 | [账号登录](https://exobrain.sharmoon.cc.cd/admin/) | 自己的 Agent、知识库、文档与会话；可使用公开助手和只读公开资料 |
-| 管理员登录 | [账号登录](https://exobrain.sharmoon.cc.cd/admin/) | 管理用户、系统 LLM / Embedding 模型及公开演示；私有知识库、助手和会话仍按账号隔离 |
+| 游客免登录 | [公开体验](https://docask.sharmoon.cc.cd/) | 指定演示 Agent、公开知识库、当前浏览器的个人体验历史及只读示例对话 |
+| 普通用户登录 | [账号登录](https://docask.sharmoon.cc.cd/admin/) | 自己的 Agent、知识库、文档与会话；可使用公开助手和只读公开资料 |
+| 管理员登录 | [账号登录](https://docask.sharmoon.cc.cd/admin/) | 管理用户、系统 LLM / Embedding 模型及公开演示；私有知识库、助手和会话仍按账号隔离 |
 
 账号模式使用应用内登录页和服务端会话，可退出登录与修改自己的密码。管理员可以创建账号、调整角色、启停账号和重置密码；停用、改密或变更角色会撤销已有登录。所有账号的私有资源和历史相互独立，管理员角色也不能列出、预览、检索、修改或删除其他账号的私有知识库，不能通过其助手或会话绕过隔离。公开助手和知识库在普通用户工作区中只读。当前账号由管理员创建，不提供自助注册。
 
@@ -19,7 +23,7 @@
 知识库详情提供“删除知识库”及二次确认，删除该库的文档、检索索引和模型绑定，并解除助手引用。原文件在数据库提交后清理，临时失败会进入持久队列重试；删除事务失败时保留原数据和文件。已有聊天记录不随知识库一起删除。
 
 - **个人体验历史**：消息保存在数据库，访客身份由 HttpOnly Cookie 识别。HTTPS 下 Cookie 使用 Secure、SameSite=Lax，有效期 30 天。同一 Cookie 可在刷新后继续读取历史；清除 Cookie、过期后获得新 Cookie 或更换浏览器，不能凭新身份找回原访客会话。历史不会自动变成公开内容。
-- **示例对话**：[查看示例](https://exobrain.sharmoon.cc.cd/showcase) 展示使用公开资料实际执行、经审核后发布的问答、工具调用和结果，用于说明项目能力。示例为只读，原访客也不能继续发送、改名、删除或订阅其 SSE；体验同一问题需新建个人会话。
+- **示例对话**：[查看示例](https://docask.sharmoon.cc.cd/showcase) 展示使用公开资料实际执行、经审核后发布的问答、工具调用和结果，用于说明项目能力。示例为只读，原访客也不能继续发送、改名、删除或订阅其 SSE；体验同一问题需新建个人会话。
 - **Agent 关联标识**：历史列表、对话顶部及示例页按会话保存的 `agentId` 匹配当前可见 Agent 名称，桌面与移动端均可查看。缺失关联、加载失败和不可见状态有独立提示，不回退为默认 Agent。名称不是历史配置快照；空关联的会话仍可读，但不能继续发送空 Agent ID 的消息。
 - **工具范围**：游客执行器只注册 `KnowledgeTool`、`getDate`、`directAnswer`、`terminate`；知识检索同时受当前账号权限和助手获准的知识库范围限制。普通用户不能启用管理工具；管理员可配置已注册的邮件等可选工具。没有账号隔离的数据库查询、文件系统示例工具禁止进入账号执行器，生产环境不注册通用 SQL 查询工具。
 
@@ -35,7 +39,7 @@
 - [工程案例：幂等、取消与租约](docs/public-demo/v2-2026-10-19/02_engineering_cases.md)
 - [能力归属：继承、新增与边界](docs/public-demo/v2-2026-10-19/03_contribution_map.md)
 
-只有 manifest 中列出的三份正文用于索引。提示词、测试清单、验收报告与 manifest 本身不上传知识库。原三份 v1 资料及冻结语料保持字节不变，旧会话的来源继续可读。2026-10-20 已上线 `6774aee`，三条经逐段审核的真实问答已加入[只读示例](https://exobrain.sharmoon.cc.cd/showcase)。实时回答仍有错引、偏长与等待较久的样本；实际发布、完整样本和后续目标见 [UX-06 交付记录](docs/development/visitor-experience/deliveries/UX-06.md)。
+只有 manifest 中列出的三份正文用于索引。提示词、测试清单、验收报告与 manifest 本身不上传知识库。原三份 v1 资料及冻结语料保持字节不变，旧会话的来源继续可读。2026-10-20 已上线 `6774aee`，三条经逐段审核的真实问答已加入[只读示例](https://docask.sharmoon.cc.cd/showcase)。实时回答仍有错引、偏长与等待较久的样本；实际发布、完整样本和后续目标见 [UX-06 交付记录](docs/development/visitor-experience/deliveries/UX-06.md)。
 
 在知识库的文档列表点击 Markdown 文件名或“预览”入口，可以打开只读内容并切换“预览 / 源码”。支持 UTF-8 编码的 `.md`、`.markdown` 文件，扩展名不区分大小写，原文件最大 **2 MiB（2,097,152 字节）**。源码视图显示文件原文；索引方式见下一条。
 
@@ -337,4 +341,4 @@ docs/development/               # 优化开发指南、共享契约与可分发�
 
 ## 来源与许可
 
-ExoBrain 基于 [JChatMind](https://github.com/youngyangyang04/JChatMind) 持续开发，Java 包名沿用 `com.kama.jchatmind`。项目保留上游作者程序员 Carl 的版权声明，并遵循 [MIT License](LICENSE)；继承能力与本仓库新增能力的划分见[来源与能力归属](docs/provenance.md)。使用和再分发时请保留原许可与版权声明。
+问档 DocAsk 基于 [JChatMind](https://github.com/youngyangyang04/JChatMind) 持续开发，Java 包名沿用 `com.kama.jchatmind`。项目保留上游作者程序员 Carl 的版权声明，并遵循 [MIT License](LICENSE)；继承能力与本仓库新增能力的划分见[来源与能力归属](docs/provenance.md)。使用和再分发时请保留原许可与版权声明。

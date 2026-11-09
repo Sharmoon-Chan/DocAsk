@@ -107,9 +107,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onNavigate }) => {
     <div className="px-4 flex flex-col h-full">
       <div className="min-h-20 w-full shrink-0 flex items-center border-b-2 border-dashed border-sketch">
         <div className="flex items-center gap-2.5">
-          <button type="button" onClick={() => goTo("/")} className="flex cursor-pointer items-center gap-2.5 rounded-xl text-left transition-transform duration-200 hover:-translate-y-0.5" aria-label="ExoBrain 首页">
+          <button type="button" onClick={() => goTo("/")} className="flex cursor-pointer items-center gap-2.5 rounded-xl text-left transition-transform duration-200 hover:-translate-y-0.5" aria-label="问档 DocAsk 首页">
             <ExoBrainLogo />
-            <span className="text-xl font-bold tracking-tight text-ink">ExoBrain</span>
+            <span className="text-xl font-bold tracking-tight text-ink">问档 DocAsk</span>
           </button>
           {IS_PUBLIC_DEMO && (
             <span className="rounded-full bg-sketch px-2 py-0.5 text-xs font-semibold text-pencil">

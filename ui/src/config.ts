@@ -21,7 +21,7 @@ export const DEMO_PROMPTS: readonly DemoPrompt[] = [
     title: "30 秒了解这个项目",
     description: "一句话加三个要点，说明能做什么",
     prompt:
-      "用一句话和三个要点说明 ExoBrain 能做什么，并指出我可以亲自体验的能力。",
+      "用一句话和三个要点说明问档 DocAsk 能做什么，并指出我可以亲自体验的能力。",
   },
   {
     title: "看一条有原文出处的回答",

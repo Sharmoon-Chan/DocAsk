@@ -44,7 +44,7 @@ services:
       SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: 20MB
       SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: 20MB
       DOCUMENT_STORAGE_BASE_PATH: /app/data/documents
-      APP_AUTH_PUBLIC_ORIGIN: https://exobrain.sharmoon.cc.cd
+      APP_AUTH_PUBLIC_ORIGIN: https://docask.sharmoon.cc.cd
       APP_AUTH_SECURE_COOKIE: "true"
       APP_AUTH_BOOTSTRAP_ADMIN_USERNAME: admin
       APP_AUTH_BOOTSTRAP_ADMIN_PASSWORD_FILE: /run/secrets/bootstrap-admin-password

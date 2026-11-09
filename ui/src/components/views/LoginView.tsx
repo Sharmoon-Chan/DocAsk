@@ -27,7 +27,7 @@ export default function LoginView() {
       <div className="w-full max-w-md">
         <div className="mb-7 flex items-center justify-center gap-3 animate-pop-in">
           <ExoBrainLogo className="h-11 w-11 rounded-2xl shadow-doodle" />
-          <span className="text-2xl font-bold tracking-tight text-ink">ExoBrain</span>
+          <span className="text-2xl font-bold tracking-tight text-ink">问档 DocAsk</span>
         </div>
         <section className="doodle-card p-6 sm:p-8 animate-pop-in" style={{ animationDelay: "60ms" }} aria-labelledby="account-login-title">
           <Typography.Title level={2} id="account-login-title" className="mb-2! text-2xl!">

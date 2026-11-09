@@ -6,7 +6,7 @@ export default function ExoBrainLogo({ className = "h-9 w-9" }: ExoBrainLogoProp
   return (
     <img
       src={`${import.meta.env.BASE_URL}exobrain.svg`}
-      alt="ExoBrain"
+      alt="问档 DocAsk"
       width={64}
       height={64}
       className={`shrink-0 ${className}`}

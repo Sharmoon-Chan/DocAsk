@@ -24,7 +24,7 @@ export default function PublicDemoBootstrap({ children }: { children: ReactNode 
     <div className="flex h-dvh items-center justify-center bg-white p-6">
       <div className="max-w-sm text-center">
         <ExoBrainLogo className="mx-auto mb-5 h-14 w-14" />
-        <h1 className="mb-3 text-2xl font-semibold text-slate-900">ExoBrain</h1>
+        <h1 className="mb-3 text-2xl font-semibold text-slate-900">问档 DocAsk</h1>
         {status === "loading" ? (
           <div role="status" className="space-y-4 text-sm text-slate-500">
             <p>正在准备公开体验…</p>

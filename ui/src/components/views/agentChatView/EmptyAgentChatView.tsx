@@ -117,7 +117,7 @@ export default function EmptyAgentChatView({
           <div className="animate-pop-in">
             <div className="mb-3 flex items-center gap-2">
               <ExoBrainLogo className="h-9 w-9 rounded-xl shadow-doodle" />
-              <span className="text-xs font-bold tracking-[0.22em] text-sketch0">EXOBRAIN ✎</span>
+              <span className="text-xs font-bold tracking-[0.22em] text-sketch0">问档 DOCASK ✎</span>
             </div>
             <Title level={1} className="mb-2! text-2xl! leading-tight! text-ink! sm:text-3xl!">
               {IS_PUBLIC_DEMO ? "问一个问题，查看答案背后的原文" : "开始新的对话"}
@@ -125,7 +125,7 @@ export default function EmptyAgentChatView({
             <Text type="secondary" className="block max-w-xl text-sm leading-6 sm:text-base sm:leading-7">
               {IS_PUBLIC_DEMO
                 ? "检索公开资料，阅读结论，点击出处核对。"
-                : "选择智能体助手，连接知识与工具，开始与 ExoBrain 对话。"}
+                : "选择智能体助手，连接知识与工具，开始与问档 DocAsk 对话。"}
             </Text>
           </div>
 

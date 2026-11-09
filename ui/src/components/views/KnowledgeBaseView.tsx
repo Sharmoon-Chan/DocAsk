@@ -347,7 +347,7 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
           <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
             <span className="flex-1 text-sm leading-6 text-slate-600">点击文件名阅读原文，也可以在对话中检索资料与来源。</span>
             <Button type="primary" icon={<MessageOutlined />} onClick={() => navigate("/chat", {
-              state: { suggestedPrompt: `请检索公开知识库「${currentKnowledgeBase.name}」，介绍 ExoBrain 的技术架构与检索流程，并注明文档来源。` },
+              state: { suggestedPrompt: `请检索公开知识库「${currentKnowledgeBase.name}」，介绍问档 DocAsk 的技术架构与检索流程，并注明文档来源。` },
             })}>用这个知识库提问</Button>
           </div>
         )}
