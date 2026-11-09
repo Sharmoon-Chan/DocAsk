@@ -1,4 +1,4 @@
-# ExoBrain 架构：实际请求链路与恢复边界
+# 问档 DocAsk 架构：实际请求链路与恢复边界
 
 本文对应 UX-01–06 独立验收候选代码（2026-10-19）。实际部署版本与检查回执见 [UX-06](development/visitor-experience/deliveries/UX-06.md)；内容和耗时测量见 [UX-05](development/visitor-experience/deliveries/UX-05.md)。历史交付记录保留当时的状态，不能把其“未实现”段落当作当前结论。
 

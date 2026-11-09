@@ -280,3 +280,42 @@ ERROR，无守卫拒绝、无模型 HTTP 失败；新代码的 `model input proj
 - `/`、`/admin/`、新老静态资源均 200；`nginx -t` 通过后 reload。
 
 **回滚**：`ln -sfn releases/20261103-6b04814b current`（后端镜像与数据库本次未变）。
+
+## 13. 产品改名（2026-11-09，提交 `aff1e0d`，release `20261109-docask-aff1e0d`）
+
+**改什么**：产品对外名称改为 **问档 DocAsk**，入口域名改为 `https://docask.sharmoon.cc.cd`。
+按约定只改对外可见的部分，内部标识（数据库、`exobrain_*` 表前缀、`EXOBRAIN_IT_*`、Cookie、
+`/opt/exobrain`、镜像标签）保持不变——改这些要写数据迁移并停机。
+
+| 层 | 改动 |
+| --- | --- |
+| 前端 | `index.html` 标题与描述；侧边栏、移动端顶栏、登录页、启动页、空会话问候、会话兜底标题、推荐问题与知识库建议提问、Logo 的 alt 文案 |
+| 入口 | `deploy/nginx.conf` 的 `server_name docask.sharmoon.cc.cd exobrain.sharmoon.cc.cd;`（旧域名保留为别名，旧书签仍可打开） |
+| 配置 | `deploy/compose.yaml` 的 `APP_AUTH_PUBLIC_ORIGIN` 指向新域名；该属性目前在代码里没有被读取，所以只改文件不重启容器 |
+| 数据 | 演示助手名改「问档 DocAsk 演示助手」；两个知识库改名；系统提示词自称改为问档 DocAsk，并加一条「资料里的旧称 ExoBrain 指同一产品，回答统一写问档 DocAsk」 |
+| 文档 | README、`deploy/README.md`、`docs/architecture.md`、`docs/development/README.md`、`docs/provenance.md` 的标题与链接换成新名称与域名，README 另加「名称说明」段落交代哪些内部标识没改 |
+
+**验证**：
+
+- 两套前端构建 + `npx tsc --noEmit` + `npm run lint` 通过；产物里只剩内部资源路径 `/exobrain.svg` 与组件名。
+- 生产 `releases/20261109-docask-aff1e0d` 已切换，`nginx -t` 通过后 reload；新旧域名 `/`、`/admin/` 均 200，
+  `<title>` 都是「问档 DocAsk」。
+- 内置浏览器实测新域名：导航、空会话页显示「问档 DocAsk / 问档 DOCASK ✎」，助手名「问档 DocAsk 演示助手」；
+  点推荐问题得到 `SUCCEEDED` 11.0 s、3 条引用的回答，正文自称「问档 DocAsk 是一个可核验的 RAG 问答项目」。
+
+**没做的部分（需你决定）**：
+
+- **知识库正文仍是旧名**。三份资料的正文里共 16 段 chunk 含 ExoBrain，另一个公开库的文件名还叫
+  `01_exobrain_overview.md`，「浏览公开资料」与引用原文会看到。改正文等于换语料版本：要重新导入、
+  发布新索引，已发布的三条示例对话引用的旧文档会被替换。做法可沿用 v2→v5 的流程新建 `v6` 语料与知识库、
+  把助手指向新库、重跑 30 题判定后再决定旧库去留；未在本次改名里动手，避免在没重跑判定的情况下改掉被引用的正文。
+- `docs/` 下 80 余处散文里的 ExoBrain 未逐一改；其中的证据与交付记录是历史事实的记录，不追改。
+- GitHub 仓库改名需要你在 Settings → Rename 操作，改完告诉我，我把 remote 一并更新。
+
+**回滚**：`ln -sfn releases/20261103-ef7e531 current`；nginx `server_name` 从备份
+`/root/backups/docask-rename-20261109-165208/nginx-site.conf` 还原后 reload；
+助手名、知识库名、系统提示词在同目录有 `agent-names.txt`、`kb-names.txt`、`agent-prompt.txt` 可写回。
+
+**踩到的坑**：PowerShell 5.1 的 `Get-Content -Raw` 默认按 ANSI 读 UTF-8 脚本，中文经 SSH 送进 SQL 会变乱码
+（`闂。 DocAsk 婕旂ず鍔╂墜`）。改成 `scp` 传文件 + `psql` 里 `pg_read_file()` 写入后字节数一致（26/35/40 字节），
+前端显示正确。以后往库里写中文一律走文件通道。
