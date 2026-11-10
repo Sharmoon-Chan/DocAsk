@@ -33,13 +33,13 @@
 
 ## 公开示例资料
 
-当前公开演示使用 [v2-2026-10-19](docs/public-demo/v2-2026-10-19/manifest.json)，围绕首次访客的三个问题组织：
+当前公开演示使用 [v6-2026-11-09](docs/public-demo/v6-2026-11-09/manifest.json)（改名为问档 DocAsk 后重新生成），围绕首次访客的三个问题组织：
 
-- [产品导览：能做什么、如何体验](docs/public-demo/v2-2026-10-19/01_product_guide.md)
-- [工程案例：幂等、取消与租约](docs/public-demo/v2-2026-10-19/02_engineering_cases.md)
-- [能力归属：继承、新增与边界](docs/public-demo/v2-2026-10-19/03_contribution_map.md)
+- [产品导览：能做什么、如何体验、怎样核对依据](docs/public-demo/v6-2026-11-09/01_product_guide.md)
+- [工程案例：幂等、取消、重启、行锁、后台权限、答复通道、追问串题](docs/public-demo/v6-2026-11-09/02_engineering_cases.md)
+- [能力归属：继承、新增、验证范围与边界](docs/public-demo/v6-2026-11-09/03_contribution_map.md)
 
-只有 manifest 中列出的三份正文用于索引。提示词、测试清单、验收报告与 manifest 本身不上传知识库。原三份 v1 资料及冻结语料保持字节不变，旧会话的来源继续可读。2026-10-20 已上线 `6774aee`，三条经逐段审核的真实问答已加入[只读示例](https://docask.sharmoon.cc.cd/showcase)。实时回答仍有错引、偏长与等待较久的样本；实际发布、完整样本和后续目标见 [UX-06 交付记录](docs/development/visitor-experience/deliveries/UX-06.md)。
+只有 manifest 中列出的三份正文用于索引。提示词、测试清单、验收报告与 manifest 本身不上传知识库。v1 资料及冻结语料保持字节不变，v2 及更早的公开知识库继续可读，旧会话的来源不受影响。2026-11-09 起[只读示例](https://docask.sharmoon.cc.cd/showcase)换成基于 v6 的五条逐段核对过的真实问答（另保留一条日期工具示例），发布记录见 [status.md 第 14 节](docs/development/deliveries/status.md)。现场提问以当轮的检索与回答为准，历史验收样本见 [UX-06 交付记录](docs/development/visitor-experience/deliveries/UX-06.md)。
 
 在知识库的文档列表点击 Markdown 文件名或“预览”入口，可以打开只读内容并切换“预览 / 源码”。支持 UTF-8 编码的 `.md`、`.markdown` 文件，扩展名不区分大小写，原文件最大 **2 MiB（2,097,152 字节）**。源码视图显示文件原文；索引方式见下一条。
 
@@ -304,18 +304,23 @@ jchatmind/src/main/java/com/kama/jchatmind/
 │   ├── examples/               # 演进过程：V1 基础聊天 → V2 引入循环
 │   └── tools/                  # 工具实现（知识库 / 数据库 / 邮件 / terminate）
 ├── auth/                       # 登录会话、角色、资源归属与运行时权限
+├── citation/                   # 引用登记：只有本轮真实检索到的片段能被答复引用
 ├── config/                     # ChatClientRegistry、CORS、异步
 ├── controller/                 # REST + SSE 入口
 ├── demo/                       # 游客身份、公开资源白名单、独立执行器与精选记录
-├── event/                      # ChatEvent + @Async 监听器（接口立即返回，Agent 后台跑）
+├── event/                      # ChatEvent：提交后唤醒队列 worker，事件丢失不丢任务
+├── execution/                  # 运行记录与事件追踪（模型 / 检索 / 工具 / 落库耗时）、查询接口
+├── ingestion/                  # 持久化导入队列：上传入队、失败重试、孤儿文件清理
 ├── models/                     # 系统模型目录、密钥加密、动态客户端与知识库绑定
+├── retrieval/                  # 正文切块、候选索引核对后原子发布、检索授权
+├── runs/                       # 持久化对话任务：同事务入队、SKIP LOCKED 领取、租约与 fencing、后台权限复核
 ├── service/                    # 会话 / 消息 / 知识库 / RAG
 └── ...
 ui/                             # React 19 + antd 前端
 db/jchatmind.sql                # 建表脚本
 deploy/                         # 双构建、容器与 Nginx 部署模板
 docs/public-demo/               # 公开示例、检索测试与演示提示词
-docs/development/               # 优化开发指南、共享契约与可分发任务书
+docs/development/               # 开发任务书、共享契约与交付记录
 ```
 
 ---
@@ -323,8 +328,6 @@ docs/development/               # 优化开发指南、共享契约与可分发�
 ## 开发指南
 
 [优化开发指南](docs/development/README.md) 保留任务书、契约与各轮交付记录；任务 01–07 已有实现，不能把历史任务书统一理解为未完成。[访客体验优化](docs/development/visitor-experience/README.md) 记录一键提问、运行恢复、阅读定位与真实问答验收。是否已发布，以相应交付记录中的版本与线上证据为准。
-
-[主 Agent 开发交接单](docs/development/orchestrator.md) 提供统一启动提示词，由主 Agent 自行调用子 Agent，按依赖组织实现、审查、集成和交付。
 
 ---
 

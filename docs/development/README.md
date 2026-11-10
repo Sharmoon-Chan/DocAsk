@@ -6,7 +6,7 @@
 
 ## 1. 如何分发
 
-**用户只需发送[主 Agent 开发交接单](orchestrator.md)中的启动提示词。** 主 Agent 自主分派、跟进和验收子 Agent，承担最终集成、回归、文档与 GitHub 推送职责。任务 08 可交给子 Agent 实现，最终发布负责人仍是主 Agent。
+**统一入口是[主 Agent 开发交接单](orchestrator.md)。** 主 Agent 分派、跟进和验收子 Agent，承担最终集成、回归、文档与 GitHub 推送职责。任务 08 可交给子 Agent 实现，最终发布负责人仍是主 Agent。
 
 主 Agent 读取本指南、[共享契约](contracts.md)和全部任务书；每个子 Agent 读取总约定、自己的任务书及前置交付。任务书开头的独立提示词可作为子任务素材，工作目录、基线、文件权限与 Git 规则由主 Agent 补全。
 

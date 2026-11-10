@@ -1,0 +1,143 @@
+{
+  "version": "v6-2026-11-09",
+  "verifiedAt": "2026-11-09",
+  "supersedes": "v2-2026-10-19（生产此前使用的公开资料）；v3/v4/v5-2026-10-28 只用于隔离实例评测；所有旧版本保留不修改",
+  "purpose": "产品对外改名为「问档 DocAsk」后重新生成的公开体验资料。只上传本清单列出的三份正文。",
+  "changes": [
+    "三份正文统一使用对外名称「问档 DocAsk」；内部代号 exobrain 只在名称说明里出现一次。",
+    "01_product_guide.md：新增「怎样核对一条回答的依据」「没有拿到回答时会看到什么」（停止 / 重新提问 / 查看过程）、公开体验的四工具与频率限制。",
+    "02_engineering_cases.md：在 v2 四个案例基础上新增「后台执行时权限按什么判断」「最终答复为什么要走专用通道」「上一轮失败了追问时会不会串题」；补充双实例演练的真实结果（同键三次同一 runId、同会话 200/409、强行终止后约 22 s 记为中断且不重放）。",
+    "03_contribution_map.md：继承能力按 docs/provenance.md 写准（Think–Execute 循环、手动工具执行、工具框架、助手即数据、标题向量检索、SSE 均为继承）；新增能力按两组概括；引用编号只描述公开体验实际使用的 directAnswer 通道；groundedAnswer 明确标为隔离实例结果、开关默认关闭；新增检索方式与 50 题冻结评测（含失败归因）一节。",
+    "agent-system-prompt.md：在 11-03 统一编号版提示词基础上，产品名改为问档 DocAsk、资料日期改为 2026-11-09，并增加 grounded 结果不得说成线上指标的约束。"
+  ],
+  "documents": [
+    {
+      "file": "01_product_guide.md",
+      "title": "问档 DocAsk 产品导览",
+      "sha256": "c124168ce02a71164908db4e5b07c636e9f855df967bbaa83cda84bfe1fc43af",
+      "bytes": 5043,
+      "answers": [
+        "这个项目能做什么",
+        "我在这里能亲自体验什么",
+        "怎样核对一条回答的依据",
+        "没拿到回答时会看到什么",
+        "公开体验有哪些边界"
+      ]
+    },
+    {
+      "file": "02_engineering_cases.md",
+      "title": "问档 DocAsk 工程案例",
+      "sha256": "234ba3214febd2687640591046adb25957d165f398cdbf504c479ab5f2e77438",
+      "bytes": 10931,
+      "answers": [
+        "重复点击发送会不会跑两次",
+        "取消后模型迟到返回会怎样",
+        "服务重启时排队和运行中的任务怎么处理",
+        "一个任务的行锁为什么影响别的任务",
+        "后台执行时权限按什么判断",
+        "最终答复为什么要走专用通道",
+        "上一轮失败后追问会不会串题"
+      ]
+    },
+    {
+      "file": "03_contribution_map.md",
+      "title": "问档 DocAsk 能力归属",
+      "sha256": "18184d115ef18cf1404bab39eaea7fe2eaa4b0b9bd8ba051c9641ff6738231f9",
+      "bytes": 9531,
+      "answers": [
+        "基于什么项目、继承了哪些能力",
+        "本仓库新增了什么（两组概括 + 明细）",
+        "引用编号怎么和来源对应",
+        "结构化交付为什么没在公开体验启用",
+        "检索怎么做、效果怎么衡量",
+        "哪些已实现但未验证、哪些还没做"
+      ]
+    }
+  ],
+  "prompt": {
+    "file": "agent-system-prompt.md",
+    "sha256": "c619b2a3f041c154f891308b781eb3c18798684ed463ca20c99e15dac59499af",
+    "bytes": 3386,
+    "note": "directAnswer（统一编号契约）协议的助手系统提示词；通过助手配置写入，不上传到知识库。写入数据库时去掉末尾换行。"
+  },
+  "excludedFromUpload": [
+    "agent-system-prompt.md",
+    "manifest.json",
+    "docs/public-demo/99_test_questions.md",
+    "docs/development/**",
+    "evaluation/**"
+  ],
+  "recommendedQuestions": [
+    {
+      "label": "30 秒了解这个项目",
+      "question": "用一句话和三个要点说明问档 DocAsk 能做什么，并指出我可以亲自体验的能力。"
+    },
+    {
+      "label": "看一条有原文出处的回答",
+      "question": "这个项目如何让我核对答案的依据？请说明引用和原文的关系。"
+    },
+    {
+      "label": "作者新增了哪些能力",
+      "question": "在上游 JChatMind 的基础上，这个仓库新增了哪些能力？请区分继承和新增。"
+    }
+  ],
+  "followUps": [
+    "重复点击发送会不会跑两次？",
+    "点了取消之后模型又返回了，会发生什么？"
+  ],
+  "production": {
+    "status": "published",
+    "publishedAt": "2026-11-09",
+    "receipt": "docs/development/deliveries/status.md 第 14 节",
+    "knowledgeBaseId": "c3ac559d-30cb-456b-8a38-9c43475b6e6a",
+    "knowledgeBaseName": "问档 DocAsk 公开体验 v6-2026-11-09",
+    "embeddingModel": "siliconflow-bge-m3（1024 维）",
+    "indexRevisionId": "a462e908-70e5-4854-a3ec-4f6040925d59",
+    "indexVersion": "body-v1",
+    "documents": [
+      {
+        "file": "01_product_guide.md",
+        "documentId": "57837b00-88a8-4e9e-80dd-71ebfcd7cfac",
+        "chunks": 8
+      },
+      {
+        "file": "02_engineering_cases.md",
+        "documentId": "21dcad6f-af28-4450-9852-4e4db9bdcc50",
+        "chunks": 9
+      },
+      {
+        "file": "03_contribution_map.md",
+        "documentId": "d7f40631-df1b-47c0-8892-60fabe15f87e",
+        "chunks": 11
+      }
+    ],
+    "chunksTotal": 28,
+    "publicKbIds": [
+      "2ad5d74f-b2ef-4ad1-8c1a-4c5bdbcfa3eb",
+      "ff9fc2f9-880c-4ec1-9516-22d068536f00",
+      "c3ac559d-30cb-456b-8a38-9c43475b6e6a"
+    ],
+    "demoAgent": {
+      "agentId": "4aea38f8-ef61-4b91-97ec-e4b309f4e218",
+      "allowedKbs": [
+        "c3ac559d-30cb-456b-8a38-9c43475b6e6a"
+      ],
+      "systemPromptMd5Before": "015a82c37f62c2dd7cecaa1d238a40bf",
+      "systemPromptMd5After": "d2743d4b28783414cef00010890878f2"
+    },
+    "showcaseSessionIds": [
+      "c74e2e26-fe09-4fc9-8570-334570e965fa",
+      "362435ed-cdc1-49cb-94fa-fb6b465f4fa4",
+      "1a3e56b8-3aa7-45a1-9766-93283041a007",
+      "99f84e7c-8d1e-4fbb-bff2-f460e0d147c8",
+      "c828ae21-aea7-46a4-a5d1-5851d53f7cf0",
+      "ca728ff0-3079-4a15-8688-f3ecb509e687"
+    ],
+    "smoke": "公网游客 10 次运行全部 SUCCEEDED（6.9–53.1 s），引用守卫拒绝 0 次；详见回执",
+    "backups": [
+      "/opt/exobrain/backups/pre-kb-v6-20261109-192818",
+      "/opt/exobrain/backups/pre-showcase-v6-20261109-203846",
+      "/opt/exobrain/backups/pre-showcase-v6b-20261109-204058"
+    ]
+  }
+}

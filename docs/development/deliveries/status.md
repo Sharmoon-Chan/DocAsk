@@ -290,8 +290,8 @@ ERROR，无守卫拒绝、无模型 HTTP 失败；新代码的 `model input proj
 | 层 | 改动 |
 | --- | --- |
 | 前端 | `index.html` 标题与描述；侧边栏、移动端顶栏、登录页、启动页、空会话问候、会话兜底标题、推荐问题与知识库建议提问、Logo 的 alt 文案 |
-| 入口 | `deploy/nginx.conf` 的 `server_name docask.sharmoon.cc.cd exobrain.sharmoon.cc.cd;`（旧域名保留为别名，旧书签仍可打开） |
-| 配置 | `deploy/compose.yaml` 的 `APP_AUTH_PUBLIC_ORIGIN` 指向新域名；该属性目前在代码里没有被读取，所以只改文件不重启容器 |
+| 入口 | `deploy/nginx.conf` 的 `server_name docask.sharmoon.cc.cd exobrain.sharmoon.cc.cd;`（旧域名保留为 nginx 别名） |
+| 配置 | `deploy/compose.yaml` 的 `APP_AUTH_PUBLIC_ORIGIN` 指向新域名；登录与写请求的同源校验（`AuthFilter.requireSameOrigin`）读取该值，第 14 节重建 app 后生效 |
 | 数据 | 演示助手名改「问档 DocAsk 演示助手」；两个知识库改名；系统提示词自称改为问档 DocAsk，并加一条「资料里的旧称 ExoBrain 指同一产品，回答统一写问档 DocAsk」 |
 | 文档 | README、`deploy/README.md`、`docs/architecture.md`、`docs/development/README.md`、`docs/provenance.md` 的标题与链接换成新名称与域名，README 另加「名称说明」段落交代哪些内部标识没改 |
 
@@ -303,14 +303,14 @@ ERROR，无守卫拒绝、无模型 HTTP 失败；新代码的 `model input proj
 - 内置浏览器实测新域名：导航、空会话页显示「问档 DocAsk / 问档 DOCASK ✎」，助手名「问档 DocAsk 演示助手」；
   点推荐问题得到 `SUCCEEDED` 11.0 s、3 条引用的回答，正文自称「问档 DocAsk 是一个可核验的 RAG 问答项目」。
 
-**没做的部分（需你决定）**：
+**没做的部分**：
 
 - **知识库正文仍是旧名**。三份资料的正文里共 16 段 chunk 含 ExoBrain，另一个公开库的文件名还叫
   `01_exobrain_overview.md`，「浏览公开资料」与引用原文会看到。改正文等于换语料版本：要重新导入、
   发布新索引，已发布的三条示例对话引用的旧文档会被替换。做法可沿用 v2→v5 的流程新建 `v6` 语料与知识库、
-  把助手指向新库、重跑 30 题判定后再决定旧库去留；未在本次改名里动手，避免在没重跑判定的情况下改掉被引用的正文。
+  把助手指向新库、重跑 30 题判定后再决定旧库去留；未在本次改名里动手，避免在没重跑判定的情况下改掉被引用的正文。第 14 节已新建 v6 语料与知识库，旧库保留。
 - `docs/` 下 80 余处散文里的 ExoBrain 未逐一改；其中的证据与交付记录是历史事实的记录，不追改。
-- GitHub 仓库改名需要你在 Settings → Rename 操作，改完告诉我，我把 remote 一并更新。
+- GitHub 仓库名沿用 ExoBrain，暂不改名。
 
 **回滚**：`ln -sfn releases/20261103-ef7e531 current`；nginx `server_name` 从备份
 `/root/backups/docask-rename-20261109-165208/nginx-site.conf` 还原后 reload；
@@ -319,3 +319,40 @@ ERROR，无守卫拒绝、无模型 HTTP 失败；新代码的 `model input proj
 **踩到的坑**：PowerShell 5.1 的 `Get-Content -Raw` 默认按 ANSI 读 UTF-8 脚本，中文经 SSH 送进 SQL 会变乱码
 （`闂。 DocAsk 婕旂ず鍔╂墜`）。改成 `scp` 传文件 + `psql` 里 `pg_read_file()` 写入后字节数一致（26/35/40 字节），
 前端显示正确。以后往库里写中文一律走文件通道。
+
+## 14. 公开资料 v6 发布（2026-11-09，产品改名后的知识库、提示词与示例对话）
+
+**为什么做**：第 13 节改名后，公开知识库三份正文仍写着旧名，首页示例对话里有一条还在讲「只索引标题、不索引正文」（10-14 的历史回答，与 10-20 起生产使用正文切块不符）。本次按 v2→v5 的流程新建 v6 语料与知识库，把演示助手切过去，再换示例对话。旧知识库与旧会话一律保留。
+
+**语料**：`docs/public-demo/v6-2026-11-09/`（三份正文 + 提示词 + `manifest.json`，生产回执已回填进 manifest 的 `production` 字段）。相对 v2：统一使用「问档 DocAsk」；工程案例从 4 个扩到 7 个（新增后台权限复核、答复通道、追问串题，并补双实例演练结果）；能力归属按 `docs/provenance.md` 写准继承项，新增「引用编号怎么对应」「grounded 只在隔离实例验证」「检索与 50 题评测（含失败归因）」三节。
+
+**生产变更**（按执行顺序）：
+
+| 步骤 | 内容 | 结果 |
+| --- | --- | --- |
+| 备份 | compose、nginx、私有 yaml、上一版前端、应用镜像、相关行的 JSON、`pg_dump`（校验通过）、文档卷 | `/opt/exobrain/backups/pre-kb-v6-20261109-192818` |
+| 导入 | 管理员账号经 `/api/knowledge-bases` 新建知识库，三份正文走上传队列 | 知识库 `c3ac559d-30cb-456b-8a38-9c43475b6e6a`（绑定 `siliconflow-bge-m3`）；生效索引 `a462e908-70e5-4854-a3ec-4f6040925d59`，`body-v1`、1024 维、3 文档 28 片段（8/9/11），每份文档一个来源哈希 |
+| 公开白名单 | `app.demo.public-kb-ids` 追加新库（文本级插入 + 结构比对，权限 400 与属主保持） | `[2ad5d74f…, ff9fc2f9…, c3ac559d…]`，旧库继续公开 |
+| 同源校验 | `compose.yaml` 的 `APP_AUTH_PUBLIC_ORIGIN` 换成 `https://docask.sharmoon.cc.cd` 后重建 app（27.6 s） | 新域名 `Origin` 登录 200，旧域名 `Origin` 403 |
+| 演示助手 | `system_prompt` 换成 v6 提示词（去掉末尾换行写入），`allowed_kbs` 只指向新库 | md5 `015a82c3…` → `d2743d4b28783414cef00010890878f2` |
+| 示例对话 | `app.demo.showcase-session-ids` 换成 v6 的五条游客会话 + 保留 10-14 的「查询当前日期」；三条会话标题改成完整问句（只改标题，不改问答） | 两次重建各约 23 s；备份 `pre-showcase-v6-20261109-203846`、`pre-showcase-v6b-20261109-204058` |
+
+**验证**：
+
+- 公网游客实测 10 次运行全部 `SUCCEEDED`（6.9–53.1 s），引用守卫拒绝 0 次。题目：三个推荐问题（第一题跑了 4 次）、两条追问、「你是谁」、「检索效果怎么样」。回答一律自称「问档 DocAsk」；引用全部指向 v6 文档与 `a462e908` 索引；问到 grounded 时会注明「隔离实例结果，不是线上指标」。
+- 逐条对照引用原文：入选示例对话的每条引用都能在对应片段里找到直接支撑。
+- `/`、`/health`、`/showcase`、`/admin/` 均 200；`/api/demo/showcase` 返回的 6 条与配置一致，逐条可读。
+- 管理员登录（公网地址，口令不出服务器）：`Origin: https://docask…` → 200，`/api/auth/me` 200，登出 200；`Origin: https://exobrain…` → 403。
+
+**示例对话最终清单**：`c74e2e26`（30 秒了解这个项目）、`362435ed`（看一条有原文出处的回答）、`1a3e56b8`（作者新增了哪些能力）、`99f84e7c`（重复点击发送会不会跑两次）、`c828ae21`（点了取消，模型又迟到返回会怎样）、`ca728ff0`（查询当前日期）。下线的五条（`676c6f77`、`d1b413ce`、`a2a33cb1`、`1f1e995e`、`795cc4af`）会话本身未删，只是不再公开。「检索效果与评测结论」（`68881fcf`）实测通过，留作备用。
+
+**没做的部分**：
+
+- grounded-v1 的 30 题判定没有在 v6 上重跑：生产使用 directAnswer 通道，grounded 开关仍是关；本次验证以公网真实运行与逐条核对引用为准。
+- 旧知识库 `2ad5d74f`、`ff9fc2f9` 正文里的旧名不改：它们是历史会话的引用来源。
+- 旧域名 `exobrain.sharmoon.cc.cd` 已不再解析，对外统一使用新域名；nginx 的 `server_name` 别名仍在，需要时在 Cloudflare 隧道的 Public Hostname 里加回旧主机名即可（隧道令牌不需要重新生成）。
+
+**回滚**（逆序）：
+
+1. 示例对话：用 `pre-showcase-v6-20261109-203846/secrets/application-prod.yaml` 覆盖私有 yaml（保持 400 与属主），三条标题按同目录 `session-titles-before.txt` 写回，然后 `docker compose up -d --force-recreate --wait app`。
+2. 知识库与同源：用 `pre-kb-v6-20261109-192818` 里的 `compose.yaml` 与 `secrets/application-prod.yaml` 覆盖后重建 app；演示助手的 `system_prompt` 按同目录 `agent-system-prompt.txt` 写回（走文件通道），`allowed_kbs` 改回 `["ff9fc2f9-880c-4ec1-9516-22d068536f00"]`。新知识库可以留着，不公开就不可见。

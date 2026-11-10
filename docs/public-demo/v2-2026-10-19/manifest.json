@@ -2,7 +2,7 @@
   "version": "v2-2026-10-19",
   "verifiedAt": "2026-10-19",
   "supersedes": "v1-2026-10-14 (docs/public-demo/*.md, frozen evaluation corpus kept byte-identical)",
-  "purpose": "简历访客体验用的新版公开资料。只上传本清单列出的正文文档。",
+  "purpose": "首次访客体验用的新版公开资料。只上传本清单列出的正文文档。",
   "documents": [
     {
       "file": "01_product_guide.md",

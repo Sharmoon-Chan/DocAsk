@@ -8,7 +8,7 @@
 请执行 docs/development/visitor-experience/README.md 中的第一批访客体验优化。
 先读 README.md、contracts.md、tasks.md 和 acceptance.md，再按 UX-01 → UX-02 → UX-03 → UX-04 → UX-05 → UX-06 推进。
 
-目标是让简历访客在 https://exobrain.sharmoon.cc.cd/ 无需登录完成一键提问、短答案阅读、引用定位、执行过程查看和继续追问。
+目标是让首次访客在 https://exobrain.sharmoon.cc.cd/ 无需登录完成一键提问、短答案阅读、引用定位、执行过程查看和继续追问。
 方案中的「待实施」条目不是已完成功能。请完成实际代码/配置/数据发布准备和验证，不停在再次写计划或仅编译通过。
 
 开始时核对 HEAD 和未提交修改。主仓库已有其他 agent 的 UI 主题及发送修复；不得重置、清理、全量暂存或覆盖这些工作。ui/preview.html 不属于本任务。
