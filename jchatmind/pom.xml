@@ -28,6 +28,9 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <!-- 源码里有中文；不锁定编码时 WS 上 javac 会按 GBK 读 UTF-8 文件，全量编译直接失败。 -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <!-- 自动管理 SpringAI 所有依赖的版本 -->
