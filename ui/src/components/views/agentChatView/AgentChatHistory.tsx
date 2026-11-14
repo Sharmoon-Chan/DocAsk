@@ -108,6 +108,8 @@ const RUN_STATUS_CLASSES: Record<RunStatus, string> = {
 const RUN_EVENT_LABELS: Record<RunEventType, string> = {
   MODEL_CALL: "模型调用",
   MODEL_RETRY: "模型重试",
+  DELIVERY_REPAIR: "答复校验与修正",
+  ANSWER_FALLBACK: "原文参考回退",
   TOOL_CALL: "工具调用",
   RETRIEVAL: "知识库检索",
   PERSIST_MESSAGE: "消息落库",

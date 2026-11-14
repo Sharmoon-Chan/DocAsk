@@ -1,7 +1,10 @@
 import type { RunDetailView, RunEventView, RunListResponse, RunSummaryView } from "../types/execution.ts";
 
 const RUN_STATUSES = new Set(["QUEUED", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "INTERRUPTED"]);
-const EVENT_TYPES = new Set(["MODEL_CALL", "MODEL_RETRY", "TOOL_CALL", "RETRIEVAL", "PERSIST_MESSAGE", "STEP_LIMIT", "ERROR"]);
+const EVENT_TYPES = new Set([
+  "MODEL_CALL", "MODEL_RETRY", "DELIVERY_REPAIR", "ANSWER_FALLBACK",
+  "TOOL_CALL", "RETRIEVAL", "PERSIST_MESSAGE", "STEP_LIMIT", "ERROR",
+]);
 const EVENT_STATUSES = new Set(["SUCCEEDED", "FAILED", "CANCELLED"]);
 const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);

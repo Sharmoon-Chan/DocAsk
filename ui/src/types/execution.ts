@@ -15,6 +15,8 @@ export type RunStatus =
 export type RunEventType =
   | "MODEL_CALL"
   | "MODEL_RETRY"
+  | "DELIVERY_REPAIR"
+  | "ANSWER_FALLBACK"
   | "TOOL_CALL"
   | "RETRIEVAL"
   | "PERSIST_MESSAGE"

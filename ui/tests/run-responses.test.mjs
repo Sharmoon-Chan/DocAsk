@@ -25,3 +25,15 @@ test('malformed timeline entries stay out of the render tree',()=>{
     assert.throws(()=>readRunDetail({summary:run,events:[entry]},'r1'),/执行详情响应格式无效/);
   }
 });
+test('delivery repair and reference fallback events retain their recorded outcome and details',()=>{
+  const events=[
+    {...event,type:'DELIVERY_REPAIR',status:'FAILED',errorCode:'INVALID_ANSWER_FORMAT',detail:'attempt=1'},
+    {...event,sequence:2,type:'ANSWER_FALLBACK',status:'SUCCEEDED',detail:'authorized-source-excerpts'},
+  ];
+  assert.deepEqual(readRunDetail({summary:run,events},'r1'),{summary:run,events});
+});
+test('adding known recovery events does not allow unknown event types',()=>{
+  for(const type of ['UNKNOWN','ANSWER_FALLBACK_EXTRA','DELIVERY_REPAIR_EXTRA','',null]){
+    assert.throws(()=>readRunDetail({summary:run,events:[{...event,type}]},'r1'),/执行详情响应格式无效/);
+  }
+});
