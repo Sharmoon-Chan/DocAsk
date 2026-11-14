@@ -747,3 +747,49 @@ restore `/root/backups/cloudflared-*/systemd-dropin/proxy-route.conf.disabled`
 as `proxy-route.conf`, revert `override.conf` from the same backup directory,
 `systemctl daemon-reload`, `systemctl restart cloudflared`. Never regenerate the
 tunnel token; it is not part of this repository.
+
+## Address failover for multi-edge model relays
+
+Some relays resolve to a pool of edge IPs (for example `happycoding.xyz`
+returns eight Alibaba Cloud edge addresses with a 10 second TTL). A few of
+those edges are unreachable from the host, and the HTTP client only tries the
+first address it is given, so a third of model calls stall until the connect
+timeout. The fix reorders the resolved addresses: reachable ones first, ordered
+by handshake time, unreachable ones kept at the end as a fallback.
+
+`com.kama.jchatmind.models.net` implements this as a JVM resolver provider. It
+is enabled by environment variables and does nothing when they are unset:
+
+| Variable | Meaning | Default |
+| --- | --- | --- |
+| `APP_MODELS_FAILOVER_HOSTS` | comma separated host names | unset (disabled) |
+| `APP_MODELS_FAILOVER_PORT` | probe port | `443` |
+| `APP_MODELS_FAILOVER_PROBE_TIMEOUT_MS` | per address probe budget | `800` |
+| `APP_MODELS_FAILOVER_CACHE_MS` | how long an ordering is reused | `30000` |
+
+The provider class and its `META-INF/services` file must be on the **boot class
+path**. Classes inside a Spring Boot fat jar live in `BOOT-INF/classes` and are
+invisible to the resolver lookup, so the service silently never runs. Compose
+therefore ships a small jar and adds it through `JAVA_TOOL_OPTIONS`:
+
+```
+JAVA_TOOL_OPTIONS: -Xbootclasspath/a:/app/failover-spi.jar -Xms64m ...
+```
+
+Build that jar from `target/classes` with only the resolver package and the
+services file. Anything that links Spring or SLF4J must stay out, otherwise the
+boot class loader cannot load it and the provider is skipped without an error.
+
+Verification: after a restart the log must contain all three lines. The first
+comes from the provider itself, the rest from a startup self-check that also
+reports the measured ordering.
+
+```
+docask-failover : address failover active: hosts=[happycoding.xyz] port=443 probeTimeoutMs=800 cacheMs=30000
+c.k.j.models.net.FailoverDiagnostics : address failover provider active=true
+c.k.j.models.net.FailoverDiagnostics : address failover order for happycoding.xyz: 163.181.78.207(157ms), ..., 43.109.171.43(unreachable)
+```
+
+Disabling it means removing `APP_MODELS_FAILOVER_HOSTS` and recreating the
+container; nothing is persisted. If an ordering looks wrong, `cache-ms: 0`
+forces a fresh probe for every resolution.
