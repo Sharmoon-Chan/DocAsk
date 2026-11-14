@@ -26,7 +26,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -41,9 +43,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -125,9 +135,9 @@ class RunResultGuardIntegrationTest {
         }
         runs = new JdbcRunRepository(jdbc);
         jobs = new RunQueueRepository(jdbc);
-        terminalWriter = new RunTerminalWriter(jobs, runs);
+        terminalWriter = new RunTerminalWriter(jobs, runs, jdbc);
         chatMessages = mockChatMessageFacade();
-        resultWriter = new RunResultWriter(jobs, runs, chatMessages);
+        resultWriter = new RunResultWriter(jobs, runs, chatMessages, jdbc);
         System.out.println("[run-guard-it] installed " + scripts.size() + " scripts into isolated database " + DATABASE);
     }
 
@@ -639,6 +649,207 @@ class RunResultGuardIntegrationTest {
         // 同一个键换内容仍然必须拒绝（不能拿旧运行冒充新请求）。
         assertThrows(RunSubmissionException.class, () -> service.replayAfterConflict(RunOrigin.DEMO,
                 "DEMO:owner-f", sessionId, key, "different-digest"));
+    }
+
+    // ------------------------------------------------------------------ 2026-11-11: lease / cancellation at the write boundary
+
+    @Test
+    @DisplayName("a cancellation after the last checkpoint rejects answers and success, but cancellation can finish")
+    void cancellationAfterCheckpointCannotCommitAnAnswerOrSuccess() {
+        assumeDatabase();
+        String sessionId = newSession();
+        String runId = newRun(sessionId);
+        jobs.insert(demoJob(sessionId, runId, "owner-write-cancel", "key-write-cancel"));
+        RunQueueJob claimed = claimAndStart("worker-write-cancel", runId);
+        RunLease lease = new RunLease(claimed, jobs, terminalWriter, runs, 10);
+        lease.checkpoint();
+
+        assertEquals(RunTerminalWriter.CancelOutcome.CANCEL_REQUESTED,
+                inTransaction(() -> terminalWriter.cancel(runId)));
+        assertThrows(RunCancelledException.class, () -> inTransaction(() -> resultWriter.persistMessage(
+                claimed.id(), claimed.fencingToken(), runId, answer(sessionId, "must not be saved"), true)));
+        // RunLease must propagate this control signal so RunExecutor can finish as CANCELLED.
+        assertThrows(RunCancelledException.class, () -> inTransaction(() -> lease.succeeded(null)));
+        assertTrue(lease.isCancelled());
+        assertNoAnswer(sessionId, runId);
+        assertEquals("RUNNING", runStatus(runId), "rejected success must not modify either terminal state");
+
+        expireLease(claimed.id());
+        assertTrue(inTransaction(() -> lease.cancelledRun(null)),
+                "the cancellation itself must still finish after its lease stops renewing");
+        assertEquals("CANCELLED", runStatus(runId));
+        assertEquals(RunQueueStatus.CANCELLED, jobs.findById(claimed.id()).orElseThrow().status());
+        assertEquals("CANCELLED_BY_USER", runErrorCode(runId));
+        assertNoAnswer(sessionId, runId);
+    }
+
+    @Test
+    @DisplayName("an expired but not yet swept RUNNING lease rejects final answers and successful completion")
+    void expiredUnscannedLeaseCannotCommitAnAnswerOrSuccess() {
+        assumeDatabase();
+        String sessionId = newSession();
+        String runId = newRun(sessionId);
+        jobs.insert(demoJob(sessionId, runId, "owner-write-expired", "key-write-expired"));
+        RunQueueJob claimed = claimAndStart("worker-write-expired", runId);
+        RunLease lease = new RunLease(claimed, jobs, terminalWriter, runs, 10);
+        expireLease(claimed.id());
+
+        assertThrows(RunLeaseLostException.class, () -> inTransaction(() -> resultWriter.persistMessage(
+                claimed.id(), claimed.fencingToken(), runId, answer(sessionId, "late answer"), true)));
+        assertThrows(RunLeaseLostException.class, () -> inTransaction(() -> lease.succeeded(null)));
+        assertNoAnswer(sessionId, runId);
+        assertEquals(RunQueueStatus.RUNNING, jobs.findById(claimed.id()).orElseThrow().status(),
+                "the guard must reject expiry without relying on an earlier sweep");
+
+        assertEquals(1, inTransaction(() -> terminalWriter.interruptExpired(10)));
+        assertEquals("INTERRUPTED", runStatus(runId));
+        assertEquals(RunQueueStatus.INTERRUPTED, jobs.findById(claimed.id()).orElseThrow().status());
+        assertNoAnswer(sessionId, runId);
+    }
+
+    @Test
+    @DisplayName("a valid answer and successful terminal transaction are still accepted")
+    void liveLeaseStillCommitsAnswerAndSuccessfulTerminal() {
+        assumeDatabase();
+        String sessionId = newSession();
+        String runId = newRun(sessionId);
+        jobs.insert(demoJob(sessionId, runId, "owner-write-valid", "key-write-valid"));
+        RunQueueJob claimed = claimAndStart("worker-write-valid", runId);
+
+        String messageId = inTransaction(() -> resultWriter.persistMessage(claimed.id(), claimed.fencingToken(),
+                runId, answer(sessionId, "a valid delivered answer"), true));
+        assertEquals(messageId, answerMessageId(runId));
+        assertEquals(1, count("SELECT count(*) FROM chat_message WHERE session_id = CAST(? AS uuid)", sessionId));
+        assertTrue(inTransaction(() -> terminalWriter.finish(claimed.id(), claimed.fencingToken(), runId,
+                RunStatus.SUCCEEDED, 1L, com.kama.jchatmind.execution.TokenUsage.UNKNOWN, null, false)));
+        assertEquals("SUCCEEDED", runStatus(runId));
+        assertEquals(RunQueueStatus.SUCCEEDED, jobs.findById(claimed.id()).orElseThrow().status());
+        assertEquals(RunTerminalWriter.CancelOutcome.ALREADY_TERMINAL,
+                inTransaction(() -> terminalWriter.cancel(runId)));
+        assertEquals(messageId, answerMessageId(runId));
+    }
+
+    @Test
+    @DisplayName("waiting for the task row past lease expiry rejects the answer using the current database clock")
+    void answerTaskLockWaitCannotUseTransactionStartTime() throws Exception {
+        assertBlockedWriteExpires("exobrain_chat_run_job", false);
+    }
+
+    @Test
+    @DisplayName("waiting for the task row past lease expiry rejects a successful terminal")
+    void terminalTaskLockWaitCannotUseTransactionStartTime() throws Exception {
+        assertBlockedWriteExpires("exobrain_chat_run_job", true);
+    }
+
+    @Test
+    @DisplayName("an answer association blocked after the task check rolls the inserted message back on expiry")
+    void answerAssociationLockWaitRollsBackMessageAndLink() throws Exception {
+        assertBlockedWriteExpires("exobrain_run", false);
+    }
+
+    @Test
+    @DisplayName("a terminal run update blocked after the task check rolls both statuses back on expiry")
+    void terminalSummaryLockWaitRollsBackBothStatuses() throws Exception {
+        assertBlockedWriteExpires("exobrain_run", true);
+    }
+
+    /**
+     * These writers are constructed directly by this suite, so use a real transaction manager rather than
+     * assuming their annotations are active. Both JdbcTemplate writes and the mock facade's real INSERT use
+     * the same bound connection. The blocking backend is independent and is observed through pg_stat_activity.
+     */
+    private static <T> T inTransaction(Supplier<T> operation) {
+        TransactionTemplate transaction = new TransactionTemplate(new DataSourceTransactionManager(jdbc.getDataSource()));
+        return transaction.execute(status -> operation.get());
+    }
+
+    private static void assertNoAnswer(String sessionId, String runId) {
+        assertEquals(0, count("SELECT count(*) FROM chat_message WHERE session_id = CAST(? AS uuid)", sessionId));
+        assertNull(answerMessageId(runId));
+    }
+
+    private static void assertBlockedWriteExpires(String lockedTable, boolean terminal) throws Exception {
+        assumeDatabase();
+        if (!List.of("exobrain_chat_run_job", "exobrain_run").contains(lockedTable)) {
+            throw new IllegalArgumentException("unexpected test lock target");
+        }
+        String sessionId = newSession();
+        String runId = newRun(sessionId);
+        String suffix = UUID.randomUUID().toString();
+        jobs.insert(demoJob(sessionId, runId, "owner-lock-" + suffix, "key-lock-" + suffix));
+        RunQueueJob claimed = claimAndStart("worker-lock-" + suffix, runId);
+        jdbc.update("UPDATE exobrain_chat_run_job SET lease_expires_at = clock_timestamp() + INTERVAL '3 seconds' "
+                + "WHERE id = CAST(? AS uuid)", claimed.id());
+        String lockedId = lockedTable.equals("exobrain_run") ? runId : claimed.id();
+        CountDownLatch transactionStarted = new CountDownLatch(1);
+        AtomicInteger writerPid = new AtomicInteger();
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        try (Connection blocker = jdbc.getDataSource().getConnection()) {
+            blocker.setAutoCommit(false);
+            try (var statement = blocker.prepareStatement(
+                    "SELECT id FROM " + lockedTable + " WHERE id = CAST(? AS uuid) FOR UPDATE")) {
+                statement.setString(1, lockedId);
+                statement.executeQuery().close();
+            }
+            Future<Throwable> attempted = executor.submit(() -> {
+                try {
+                    return inTransaction(() -> {
+                        writerPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        assertTrue(Boolean.TRUE.equals(jdbc.queryForObject(
+                                "SELECT clock_timestamp() < lease_expires_at FROM exobrain_chat_run_job "
+                                        + "WHERE id = CAST(? AS uuid)", Boolean.class, claimed.id())),
+                                "the writer transaction must start while its lease is still valid");
+                        transactionStarted.countDown();
+                        if (terminal) {
+                            terminalWriter.finish(claimed.id(), claimed.fencingToken(), runId,
+                                    RunStatus.SUCCEEDED, 1L, com.kama.jchatmind.execution.TokenUsage.UNKNOWN, null, false);
+                        } else {
+                            resultWriter.persistMessage(claimed.id(), claimed.fencingToken(), runId,
+                                    answer(sessionId, "blocked final answer"), true);
+                        }
+                        return null;
+                    });
+                } catch (Throwable outcome) {
+                    return outcome;
+                } finally {
+                    transactionStarted.countDown();
+                }
+            });
+            try {
+                assertTrue(transactionStarted.await(5, TimeUnit.SECONDS), "writer transaction did not start");
+                awaitCondition(() -> Boolean.TRUE.equals(jdbc.queryForObject(
+                        "SELECT wait_event_type = 'Lock' FROM pg_stat_activity WHERE pid = ?",
+                        Boolean.class, writerPid.get())), "writer did not block on the actual PostgreSQL row lock");
+                // Compare with clock_timestamp in PostgreSQL, not the test host's clock or a fixed sleep.
+                awaitCondition(() -> Boolean.TRUE.equals(jdbc.queryForObject(
+                        "SELECT clock_timestamp() >= lease_expires_at FROM exobrain_chat_run_job "
+                                + "WHERE id = CAST(? AS uuid)", Boolean.class, claimed.id())),
+                        "the database lease did not expire while the write was blocked");
+                blocker.rollback();
+                assertInstanceOf(RunLeaseLostException.class, attempted.get(5, TimeUnit.SECONDS));
+            } finally {
+                blocker.rollback();
+            }
+        } finally {
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(5, TimeUnit.SECONDS), "writer backend did not finish");
+        }
+
+        assertNoAnswer(sessionId, runId);
+        assertEquals("RUNNING", runStatus(runId), "the rejected terminal update must roll back");
+        RunQueueJob rejected = jobs.findById(claimed.id()).orElseThrow();
+        assertEquals(RunQueueStatus.RUNNING, rejected.status());
+        assertEquals(claimed.fencingToken(), rejected.fencingToken());
+        assertNotNull(rejected.leaseExpiresAt(), "terminal cleanup must roll back with the rejected success");
+    }
+
+    private static void awaitCondition(BooleanSupplier condition, String failureMessage) throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(6);
+        while (!condition.getAsBoolean()) {
+            assertTrue(System.nanoTime() < deadline, failureMessage);
+            Thread.sleep(20L);
+        }
     }
 
     // ------------------------------------------------------------------ fixtures

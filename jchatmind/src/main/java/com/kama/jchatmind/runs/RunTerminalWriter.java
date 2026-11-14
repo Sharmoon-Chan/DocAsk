@@ -6,9 +6,11 @@ import com.kama.jchatmind.execution.RunSummary;
 import com.kama.jchatmind.execution.TokenUsage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -33,10 +35,12 @@ public class RunTerminalWriter {
 
     private final RunQueueRepository jobs;
     private final RunRepository runs;
+    private final JdbcTemplate jdbc;
 
-    public RunTerminalWriter(RunQueueRepository jobs, RunRepository runs) {
+    public RunTerminalWriter(RunQueueRepository jobs, RunRepository runs, JdbcTemplate jdbc) {
         this.jobs = jobs;
         this.runs = runs;
+        this.jdbc = jdbc;
     }
 
     /** 取消结果：排队任务被原子终止、运行中只记录协作式停止请求、或已经是终态。 */
@@ -62,7 +66,10 @@ public class RunTerminalWriter {
                 || locked.get().status() != RunQueueStatus.RUNNING) {
             return false;
         }
-        int updated = runs.complete(runId, status, Instant.now(), durationMs, usage, errorCode, traceIncomplete);
+        RunQueueJob job = locked.get();
+        Instant databaseNow = databaseNow();
+        requireSuccessLease(job, status, databaseNow);
+        int updated = runs.complete(runId, status, databaseNow, durationMs, usage, errorCode, traceIncomplete);
         if (updated == 0) {
             // 05 的条件更新拒绝：运行已经不是 QUEUED/RUNNING（例如已被恢复流程标记中断）。
             // 不覆盖运行状态，只把任务行同步到真实的运行状态，避免它会永远停在 RUNNING。
@@ -75,7 +82,31 @@ public class RunTerminalWriter {
             return false;
         }
         jobs.markTerminal(jobId, fencingToken, RunQueueStatus.valueOf(status.name()), errorCode);
+        // The run-summary UPDATE may have waited on a different row even though we own the task row.
+        // Use the captured, locked lease after all writes; expiry rolls both terminal updates back.
+        requireSuccessLease(job, status, databaseNow());
         return true;
+    }
+
+    private static void requireSuccessLease(RunQueueJob job, RunStatus target, Instant databaseNow) {
+        // Cancellation and interruption must remain writable even when they caused the lease to stop renewing.
+        if (target != RunStatus.SUCCEEDED) {
+            return;
+        }
+        if (job.cancelRequested()) {
+            throw new RunCancelledException("本次运行已收到取消请求，不能记为成功");
+        }
+        if (job.leaseExpiresAt() == null || !job.leaseExpiresAt().isAfter(databaseNow)) {
+            throw new RunLeaseLostException("租约已过期，不能记为成功");
+        }
+    }
+
+    private Instant databaseNow() {
+        Timestamp current = jdbc.queryForObject("SELECT clock_timestamp()", Timestamp.class);
+        if (current == null) {
+            throw new RunLeaseLostException("无法确认数据库当前时刻，停止终态写入");
+        }
+        return current.toInstant();
     }
 
     /** 取消：排队中直接原子终止；运行中只记录协作式停止请求。 */
@@ -121,9 +152,10 @@ public class RunTerminalWriter {
                 continue;
             }
             RunQueueJob job = locked.get();
+            Instant databaseNow = databaseNow();
             // 加锁后重新判断：期间被续租或被正常完成的任务不能标成中断。
             if (job.status() != RunQueueStatus.RUNNING || job.leaseExpiresAt() == null
-                    || !job.leaseExpiresAt().isBefore(Instant.now())) {
+                    || job.leaseExpiresAt().isAfter(databaseNow)) {
                 continue;
             }
             // 用户已经请求取消的任务不能记成“重启中断”：续租会刻意忽略 cancel_requested=true，
@@ -133,8 +165,8 @@ public class RunTerminalWriter {
             String errorCode = cancelRequested ? "CANCELLED_BY_USER" : INTERRUPTED_BY_RESTART;
             RunSummary run = runs.findById(job.runId());
             Long durationMs = run == null || run.startedAt() == null ? null
-                    : Math.max(0L, Duration.between(run.startedAt(), Instant.now()).toMillis());
-            int updated = runs.complete(job.runId(), terminal, Instant.now(), durationMs,
+                    : Math.max(0L, Duration.between(run.startedAt(), databaseNow).toMillis());
+            int updated = runs.complete(job.runId(), terminal, databaseNow, durationMs,
                     TokenUsage.UNKNOWN, errorCode, false);
             if (updated == 0) {
                 // 运行在此期间已经进入别的终态；把任务行同步过去，不覆盖它。

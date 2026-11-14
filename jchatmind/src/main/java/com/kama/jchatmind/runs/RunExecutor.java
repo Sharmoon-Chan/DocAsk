@@ -97,7 +97,7 @@ public class RunExecutor {
             runtime.attachRunPersistence((message, finalAnswer) -> resultWriter.persistMessage(
                     job.id(), lease.fencingToken(), job.runId(), message, finalAnswer));
             runtime.run();
-            if (runtime.state() == AgentState.ERROR) {
+            if (runtime.state() != AgentState.FINISHED || !runtime.hasDeliveredAnswer()) {
                 lease.failed(recorder, "NO_ANSWER_PRODUCED");
             } else {
                 lease.succeeded(recorder);

@@ -320,6 +320,12 @@ public class RunLease {
                         job.runId(), status);
             }
             return applied;
+        } catch (RunCancelledException cancellation) {
+            cancelled = true;
+            throw cancellation;
+        } catch (RunLeaseLostException lost) {
+            leaseLost = true;
+            throw lost;
         } catch (RuntimeException failure) {
             log.error("Run terminal state could not be persisted: run={} status={}", job.runId(), status,
                     failure);

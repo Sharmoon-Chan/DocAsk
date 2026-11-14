@@ -5,9 +5,12 @@ import com.kama.jchatmind.model.dto.ChatMessageDTO;
 import com.kama.jchatmind.service.ChatMessageFacadeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -32,11 +35,14 @@ public class RunResultWriter {
     private final RunQueueRepository jobs;
     private final RunRepository runs;
     private final ChatMessageFacadeService messages;
+    private final JdbcTemplate jdbc;
 
-    public RunResultWriter(RunQueueRepository jobs, RunRepository runs, ChatMessageFacadeService messages) {
+    public RunResultWriter(RunQueueRepository jobs, RunRepository runs, ChatMessageFacadeService messages,
+                           JdbcTemplate jdbc) {
         this.jobs = jobs;
         this.runs = runs;
         this.messages = messages;
+        this.jdbc = jdbc;
     }
 
     /**
@@ -48,7 +54,8 @@ public class RunResultWriter {
     @Transactional
     public String persistMessage(String jobId, long fencingToken, String runId, ChatMessageDTO message,
                                  boolean finalAnswer) {
-        requireOwnedRunning(jobId, fencingToken, runId);
+        RunQueueJob job = requireOwnedRunning(jobId, fencingToken, runId);
+        requireWritableLease(job);
         String messageId = messages.createChatMessage(message).getChatMessageId();
         if (finalAnswer) {
             if (runs.setAnswerMessageIdIfRunning(runId, messageId) == 0) {
@@ -56,15 +63,32 @@ public class RunResultWriter {
                 throw new RunLeaseLostException("运行已进入终态，拒绝写入迟到的最终答复");
             }
         }
+        // Message insertion / answer association can wait on other rows after the task lock was acquired.
+        // The task row stays locked, so cancellation cannot change, but its lease can expire in wall time.
+        // Recheck before returning: an expired write rolls back both the message and the answer association.
+        requireWritableLease(job);
         return messageId;
     }
 
-    private void requireOwnedRunning(String jobId, long fencingToken, String runId) {
+    private RunQueueJob requireOwnedRunning(String jobId, long fencingToken, String runId) {
         Optional<RunQueueJob> locked = jobs.lockById(jobId);
         if (locked.isEmpty() || locked.get().fencingToken() != fencingToken
                 || locked.get().status() != RunQueueStatus.RUNNING) {
             log.warn("Late message rejected: run terminal or lease taken over: run={}", runId);
             throw new RunLeaseLostException("运行已进入终态或租约已被接管，拒绝写入迟到结果");
+        }
+        return locked.get();
+    }
+
+    private void requireWritableLease(RunQueueJob job) {
+        if (job.cancelRequested()) {
+            throw new RunCancelledException("本次运行已收到取消请求，拒绝写入迟到结果");
+        }
+        // NOW() is the transaction start time in PostgreSQL; it does not advance while waiting for locks.
+        Timestamp current = jdbc.queryForObject("SELECT clock_timestamp()", Timestamp.class);
+        Instant databaseNow = current == null ? null : current.toInstant();
+        if (databaseNow == null || job.leaseExpiresAt() == null || !job.leaseExpiresAt().isAfter(databaseNow)) {
+            throw new RunLeaseLostException("租约已过期，拒绝写入迟到结果");
         }
     }
 }

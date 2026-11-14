@@ -176,7 +176,8 @@ class RunTracingIntegrationTest {
                 repoFile("deploy/migrations/20261014-models.sql"),
                 repoFile("deploy/migrations/20261016-storage-cleanup.sql"),
                 repoFile("deploy/migrations/20261017-03-body-index.sql"),
-                repoFile("deploy/migrations/20261017-05-runs.sql"));
+                repoFile("deploy/migrations/20261017-05-runs.sql"),
+                repoFile("deploy/migrations/20261111-01-source-answer-events.sql"));
     }
 
     private static Path repoFile(String relative) {

@@ -105,7 +105,7 @@ class RunQueueIntegrationTest {
         }
         RunRepository runs = new JdbcRunRepository(jdbc);
         jobs = new RunQueueRepository(jdbc);
-        terminalWriter = new RunTerminalWriter(jobs, runs);
+        terminalWriter = new RunTerminalWriter(jobs, runs, jdbc);
         System.out.println("[run-queue-it] installed " + scripts.size() + " scripts into isolated database " + DATABASE);
     }
 
