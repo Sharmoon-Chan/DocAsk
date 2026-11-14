@@ -177,7 +177,9 @@ public class BodyChunker {
             }
             overlapStart--;
         }
-        return overlapStart > first ? overlapStart : last;
+        // A single atom can consume the whole budget while more atoms remain. Reusing it would
+        // return first forever and append identical ranges until the heap is exhausted.
+        return overlapStart > first ? overlapStart : first + 1;
     }
 
     private static boolean fits(String text, int startChar, int endChar, ChunkBudget budget) {
