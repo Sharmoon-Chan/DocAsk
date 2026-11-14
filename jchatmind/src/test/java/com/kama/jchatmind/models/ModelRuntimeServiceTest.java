@@ -6,6 +6,9 @@ import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.ai.chat.messages.ToolResponseMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -32,7 +36,7 @@ class ModelRuntimeServiceTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"deepseek", "openai", "zhipuai"})
-    void dynamicallyConfiguredProviderReallyExecutesToolCalls(String protocol) throws Exception {
+    void dynamicallyConfiguredProviderReturnsToolDecisionsForManualCallerExecution(String protocol) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         List<JsonNode> requests = new CopyOnWriteArrayList<>();
         List<String> paths = new CopyOnWriteArrayList<>();
@@ -56,20 +60,62 @@ class ModelRuntimeServiceTest {
             try (var stream = exchange.getResponseBody()) { stream.write(data); }
         });
         server.start();
-        try {
+        try (ModelRuntimeService runtime = runtime(WebClient.builder(), 10)) {
             ModelDefinition model = definition(protocol, ModelKind.LLM,
                     "http://127.0.0.1:" + server.getAddress().getPort() + "/custom/v1");
-            ModelRuntimeService runtime = runtime(WebClient.builder(), 10);
             DateProbe date = new DateProbe();
-            assertEquals("Tool executed.", runtime.chatClient(model).prompt().user("What is today's date?")
+            Thread caller = Thread.currentThread();
+            var client = runtime.chatClient(model);
+            var decision = client.prompt().user("What is today's date?").tools(date).call().chatResponse();
+            assertNotNull(decision);
+            assertTrue(decision.hasToolCalls());
+            assertEquals(1, calls.get());
+            assertEquals(0, date.calls.get(), "provider transport must not execute ToolCallbacks");
+            var requested = decision.getResult().getOutput().getToolCalls().getFirst();
+            String dateResult = date.getDate();
+            assertEquals("Tool executed.", client.prompt().messages(
+                    new UserMessage("What is today's date?"), decision.getResult().getOutput(),
+                    ToolResponseMessage.builder().responses(List.of(new ToolResponseMessage.ToolResponse(
+                            requested.id(), requested.name(), dateResult))).build())
                     .tools(date).call().content());
             assertEquals(2, calls.get());
             assertEquals(1, date.calls.get());
+            assertSame(caller, date.thread.get(), "the caller, not the deadline pool, executes the tool once");
             assertEquals("custom-provider-model", requests.get(0).path("model").asText());
             assertTrue(requests.get(0).path("tools").toString().contains("getDate"));
             assertTrue(requests.get(1).path("messages").toString().contains("2026-10-14"));
             assertEquals(List.of("/custom/v1/chat/completions", "/custom/v1/chat/completions"), paths);
             assertTrue(authorization.stream().allMatch(value -> value.equals("Bearer fixture-key")));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"deepseek", "openai", "zhipuai"})
+    void explicitInternalToolExecutionIsRejectedBeforeTransportOrCallback(String protocol) throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        AtomicInteger httpCalls = new AtomicInteger();
+        server.createContext("/custom/v1/chat/completions", exchange -> {
+            httpCalls.incrementAndGet();
+            exchange.getRequestBody().readAllBytes();
+            exchange.sendResponseHeaders(500, -1);
+            exchange.close();
+        });
+        server.start();
+        try (ModelRuntimeService runtime = runtime(WebClient.builder(), 10)) {
+            DateProbe date = new DateProbe();
+            ModelDefinition model = definition(protocol, ModelKind.LLM,
+                    "http://127.0.0.1:" + server.getAddress().getPort() + "/custom/v1");
+            ModelException rejected = assertThrows(ModelException.class, () -> runtime.chatClient(model).prompt()
+                    .user("Execute the supplied callback internally")
+                    .tools(date).options(ToolCallingChatOptions.builder().internalToolExecutionEnabled(true).build())
+                    .call().content());
+            assertEquals(400, rejected.getStatus());
+            assertEquals(ModelCallFailure.Kind.CONFIGURATION, ModelCallFailure.classify(rejected).kind());
+            assertFalse(ModelCallFailure.classify(rejected).retryable());
+            assertEquals(0, httpCalls.get());
+            assertEquals(0, date.calls.get());
         } finally {
             server.stop(0);
         }
@@ -159,7 +205,12 @@ class ModelRuntimeServiceTest {
 
     public static class DateProbe {
         final AtomicInteger calls = new AtomicInteger();
+        final AtomicReference<Thread> thread = new AtomicReference<>();
         @Tool(description = "Get the current date")
-        public String getDate() { calls.incrementAndGet(); return "2026-10-14"; }
+        public String getDate() {
+            thread.set(Thread.currentThread());
+            calls.incrementAndGet();
+            return "2026-10-14";
+        }
     }
 }

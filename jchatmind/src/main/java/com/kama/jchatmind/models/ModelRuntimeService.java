@@ -1,6 +1,8 @@
 package com.kama.jchatmind.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -12,6 +14,7 @@ import org.springframework.ai.deepseek.api.DeepSeekApi;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -34,30 +37,41 @@ import java.util.Map;
 
 /** Builds real provider clients from catalog snapshots; there is no static-provider fallback. */
 @Service
-public class ModelRuntimeService {
+public class ModelRuntimeService implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ModelRuntimeService.class);
     private final ModelSecretCipher cipher;
     private final ModelSettings settings;
     private final WebClient.Builder webClientBuilder;
+    private final ModelCallDeadline callDeadline;
 
+    @Autowired
     public ModelRuntimeService(ModelSecretCipher cipher, ModelSettings settings, WebClient.Builder webClientBuilder) {
+        this(cipher, settings, webClientBuilder, new ModelCallDeadline());
+    }
+
+    ModelRuntimeService(ModelSecretCipher cipher, ModelSettings settings, WebClient.Builder webClientBuilder,
+                        ModelCallDeadline callDeadline) {
         this.cipher = cipher;
         this.settings = settings;
         this.webClientBuilder = webClientBuilder;
+        this.callDeadline = java.util.Objects.requireNonNull(callDeadline, "Provider call deadline is required");
     }
 
     public ChatClient chatClient(ModelDefinition model) {
-        return createChatClient(model, settings.getRequestTimeoutSeconds(), null);
+        return createChatClient(model, settings.getLlmConnectTimeoutSeconds(), settings.getLlmReadTimeoutSeconds(), null);
     }
 
-    private ChatClient createChatClient(ModelDefinition model, int timeoutSeconds, Integer maxTokens) {
+    private ChatClient createChatClient(ModelDefinition model, int connectTimeoutSeconds,
+                                        int readTimeoutSeconds, Integer maxTokens) {
         if (model.kind() != ModelKind.LLM) throw new ModelException(400, "请选择语言模型");
         String apiKey = cipher.decrypt(model.id(), model.encryptedApiKey());
         if (!StringUtils.hasText(apiKey)) throw new ModelException(503, "语言模型尚未配置 API Key");
         SimpleClientHttpRequestFactory requests = new SimpleClientHttpRequestFactory();
-        requests.setConnectTimeout(Duration.ofSeconds(Math.min(10, timeoutSeconds)));
-        requests.setReadTimeout(Duration.ofSeconds(timeoutSeconds));
+        requests.setConnectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
+        requests.setReadTimeout(Duration.ofSeconds(readTimeoutSeconds));
         RestClient.Builder rest = RestClient.builder().requestFactory(requests);
+        // The Agent retries one failed decision request with cancellation/lease checks.
+        // Provider/framework retries must stay disabled to avoid multiplying the attempt budget.
         RetryTemplate retry = RetryTemplate.builder().maxAttempts(1).build();
         ChatModel provider;
         if ("deepseek".equals(model.protocol())) {
@@ -66,7 +80,7 @@ public class ModelRuntimeService {
                     .restClientBuilder(rest).webClientBuilder(webClientBuilder.clone())
                     .responseErrorHandler(SAFE_ERRORS).build();
             DeepSeekChatOptions options = DeepSeekChatOptions.builder().model(model.model())
-                    .maxTokens(maxTokens).build();
+                    .maxTokens(maxTokens).internalToolExecutionEnabled(false).build();
             provider = DeepSeekChatModel.builder().deepSeekApi(api).defaultOptions(options).retryTemplate(retry).build();
         } else if ("openai".equals(model.protocol()) || "zhipuai".equals(model.protocol())) {
             // ZhipuAI's v4 endpoint implements the same message/tool-call protocol.
@@ -75,12 +89,12 @@ public class ModelRuntimeService {
                     .restClientBuilder(rest).webClientBuilder(webClientBuilder.clone())
                     .responseErrorHandler(SAFE_ERRORS).build();
             OpenAiChatOptions options = OpenAiChatOptions.builder().model(model.model())
-                    .maxTokens(maxTokens).build();
+                    .maxTokens(maxTokens).internalToolExecutionEnabled(false).build();
             provider = OpenAiChatModel.builder().openAiApi(api).defaultOptions(options).retryTemplate(retry).build();
         } else {
             throw new ModelException(400, "不支持的语言模型协议");
         }
-        return ChatClient.create(new SafeChatModel(provider, Duration.ofSeconds(timeoutSeconds)));
+        return ChatClient.create(new SafeChatModel(provider, Duration.ofSeconds(readTimeoutSeconds), callDeadline));
     }
 
     public float[] embed(ModelDefinition model, String text) {
@@ -145,7 +159,9 @@ public class ModelRuntimeService {
                 float[] vector = embed(model, "连接测试", 20);
                 return new ModelViews.TestResult(true, "向量模型连接正常", elapsed(started), vector.length);
             }
-            String reply = createChatClient(model, 20, 32).prompt().user("Reply with OK.").call().content();
+            String reply = createChatClient(model, Math.min(5, settings.getLlmConnectTimeoutSeconds()),
+                    Math.min(20, settings.getLlmReadTimeoutSeconds()), 32)
+                    .prompt().user("Reply with OK.").call().content();
             if (!StringUtils.hasText(reply)) throw new ModelException(502, "语言模型返回了空内容");
             return new ModelViews.TestResult(true, "语言模型连接正常", elapsed(started), null);
         } catch (ModelException safe) {
@@ -157,7 +173,6 @@ public class ModelRuntimeService {
 
     private static long elapsed(long started) { return (System.nanoTime() - started) / 1_000_000; }
     private static ModelException embeddingUnavailable() { return new ModelException(502, "向量服务暂不可用，请联系管理员检查模型配置"); }
-    private static ModelException llmUnavailable() { return new ModelException(502, "语言模型服务暂不可用，请联系管理员检查模型配置"); }
 
     private static final ResponseErrorHandler SAFE_ERRORS = new ResponseErrorHandler() {
         @Override
@@ -168,8 +183,9 @@ public class ModelRuntimeService {
             // 响应头原文、响应体全文、URL 与凭据一律不写日志、不外传。
             ProviderFailure failure = ProviderFailure.of(response.getStatusCode().value(),
                     response.getHeaders(), readBriefBody(response));
-            log.warn("Language model HTTP request failed: {}", failure.toDetail());
-            throw new ProviderUnavailableException(failure);
+            ProviderUnavailableException safe = new ProviderUnavailableException(failure);
+            log.warn("Language model HTTP request failed: {}", ModelCallFailure.classify(safe).toDetail());
+            throw safe;
         }
     };
 
@@ -184,10 +200,15 @@ public class ModelRuntimeService {
         }
     }
 
-    private record SafeChatModel(ChatModel delegate, Duration timeout) implements ChatModel {
+    @PreDestroy
+    @Override
+    public void close() { callDeadline.close(); }
+
+    private record SafeChatModel(ChatModel delegate, Duration timeout, ModelCallDeadline callDeadline) implements ChatModel {
         @Override
         public ChatResponse call(Prompt prompt) {
-            try { return delegate.call(prompt); }
+            requireManualTools(prompt);
+            try { return callDeadline.call(() -> delegate.call(prompt), timeout); }
             catch (Exception failure) { throw rethrowWithDiagnostics(failure); }
         }
 
@@ -196,34 +217,31 @@ public class ModelRuntimeService {
 
         @Override
         public Flux<ChatResponse> stream(Prompt prompt) {
-            return Flux.defer(() -> delegate.stream(prompt)).timeout(timeout)
+            return Flux.defer(() -> {
+                        requireManualTools(prompt);
+                        return delegate.stream(prompt);
+                    }).timeout(timeout)
                     .onErrorMap(ModelRuntimeService.SafeChatModel::rethrowWithDiagnostics);
         }
 
-        /**
-         * 记录根因并把白名单诊断带出去：有诊断就用 {@link ProviderUnavailableException}，
-         * 没有（超时、解析错误等）才退化成固定的「暂不可用」。
-         */
-        private static RuntimeException rethrowWithDiagnostics(Throwable failure) {
-            logFailure(failure);
-            ProviderFailure diagnostics = ProviderFailure.find(failure);
-            return diagnostics != null ? new ProviderUnavailableException(diagnostics) : llmUnavailable();
-        }
-        /**
-         * 记录可分诊的失败根因：只留异常类名与去掉 URL／密钥后的短消息。
-         *
-         * <p>没有这一行时，{@link #llmUnavailable()} 会把超时、限流与解析错误压成同一句
-         * 「服务暂不可用」，验收时无法区分失败来自供应商还是客户端。</p>
-         */
-        private static void logFailure(Throwable failure) {
-            String message = failure.getMessage() == null ? "" : failure.getMessage();
-            message = message.replaceAll("(?i)(https?://|bearer\\s+)[^\\s\"']+", "<redacted>")
-                    .replaceAll("sk-[A-Za-z0-9_\\-]{8,}", "<redacted>")
-                    .replaceAll("\\s+", " ");
-            if (message.length() > 160) {
-                message = message.substring(0, 160);
+        private static void requireManualTools(Prompt prompt) {
+            if (prompt.getOptions() instanceof ToolCallingChatOptions tools
+                    && Boolean.TRUE.equals(tools.getInternalToolExecutionEnabled())) {
+                throw new ModelException(400, "模型工具必须由调用方执行，不允许服务内部自动执行");
             }
-            log.warn("Language model call failed: type={} message={}", failure.getClass().getSimpleName(), message);
+        }
+
+        /** Keep only typed diagnostics; transport causes must survive sanitization for bounded retry. */
+        private static RuntimeException rethrowWithDiagnostics(Throwable failure) {
+            ModelCallFailure diagnostics = ModelCallFailure.classify(failure);
+            log.warn("Language model call failed: {}", diagnostics.toDetail());
+            if (diagnostics.kind() == ModelCallFailure.Kind.INTERRUPTED) {
+                Thread.currentThread().interrupt();
+            }
+            // Preserve compatibility for existing HTTP-only consumers; transport errors use the new carrier.
+            return diagnostics.providerFailure() != null
+                    ? new ProviderUnavailableException(diagnostics.providerFailure())
+                    : new ModelCallException(diagnostics);
         }
     }
 }
