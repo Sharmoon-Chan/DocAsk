@@ -1,0 +1,128 @@
+{
+  "version": "v9-2026-11-11",
+  "status": "prepared",
+  "preparedAt": "2026-11-11",
+  "knowledgeBaseName": "问档 DocAsk 项目资料（可靠原文交付版，2026-11-11）",
+  "knowledgeBaseDescription": "问档产品导览、工程案例和能力归属；说明sourceAnswer完整原文及部分覆盖、真实检索后的不足、未确认回退、同步模型调用期限和有界执行；历史检索评测与学习资料单独说明。",
+  "verificationScope": "对应冻结最终本地代码：463项单元中459通过、4项既有环境跳过，真实PostgreSQL70通过。候选与生产验收待实际回执；不预填在线问答通过数。",
+  "supersedes": "替换私有v8准备稿的三篇项目资料。已发布v7、v8原件、所有旧运行和历史冻结检索评测继续保留，不改原始计分结果。",
+  "purpose": "使私有候选项目资料与最终本地修复一致，只将documents列出的三篇正文入库；不是重写冻结评测，不上传测试问题或答案模板，100题学习资料保持原件。",
+  "changes": [
+    "补充sourceAnswer的full/partial固定部分覆盖提示，以及insufficient与sources/coverage互斥；不把覆盖声明当语义证明。",
+    "没有既有本轮来源且此前尚未完成可读检索时，执行正常受限KnowledgeTool检查可读性；这次服务端读取不发布任意近邻，只给固定未确认提示。",
+    "已有检索的原文参考按真实完成的检索组轮流保留首条再补候选，最多三项，保留授权与范围去重；不宣称相关性或完整性已验证。",
+    "补充每次同步模型调用的30秒调用方期限、共享四个无等待队列传输槽、忽略中断仍占原槽及晚结果丢弃；不是整轮Agent30秒。",
+    "说明默认关闭模型内部自动工具执行并拒绝显式启用，工具和消息写入仍在Agent调用线程及正常守卫下完成。",
+    "补充节流器显式装配和最终本地463/459/4、真实PostgreSQL70口径；生产和实际问答结果待回执，不写候选或线上成功率。",
+    "继承归属、历史50题v1/v2数字、当前单路向量检索与混合检索/重排缺口原样保留；业务提示词逐字节继承v8。"
+  ],
+  "documents": [
+    {
+      "file": "01_product_guide.md",
+      "title": "问档 DocAsk 产品导览（2026-11-11 v9 原文交付版）",
+      "sha256": "833ccfdd3fe2d0badf35c70bed86af71495d4b374053bcafcea463a94103b6db",
+      "bytes": 8338,
+      "answers": [
+        "问档能做什么",
+        "为什么展示资料原文",
+        "来源编号如何对应原文",
+        "资料不足与模型故障如何处理",
+        "日期和知识问题能否一起问",
+        "只覆盖部分问题时怎样提示"
+      ]
+    },
+    {
+      "file": "02_engineering_cases.md",
+      "title": "问档 DocAsk 工程案例（2026-11-11 v9 原文交付版）",
+      "sha256": "10c495505f05e5d9e9f7d856b641eebcba792aa8e39a2948df1392850686a60c",
+      "bytes": 13790,
+      "answers": [
+        "重复提交怎样去重",
+        "取消和租约失效怎样拒绝迟到写回",
+        "进程重启后哪些任务继续",
+        "后台权限与受限检索如何实现",
+        "原文交付如何处理引用错配",
+        "空答复与混合工具批次如何处理",
+        "模型故障怎样分类和回退",
+        "检索分数怎样重新计分",
+        "首次故障后为什么不发布任意近邻",
+        "每次同步调用期限与传输槽如何限制",
+        "默认与显式内部工具执行怎样受控",
+        "复合问题的原文参考怎样分配预算"
+      ]
+    },
+    {
+      "file": "03_contribution_map.md",
+      "title": "问档 DocAsk 能力归属（2026-11-11 v9 原文交付版）",
+      "sha256": "04ea597bfb2b261d2016aa896e70b240351b4f2d8ec96ee8c44224342074c94d",
+      "bytes": 10123,
+      "answers": [
+        "哪些能力继承自JChatMind",
+        "本仓库新增了什么",
+        "公开实际工具有哪些",
+        "sourceAnswer能够保证什么",
+        "50题检索指标与口径",
+        "混合检索与重排是否完成",
+        "100题学习资料与历史评测有什么关系",
+        "原文参考与检索级拒答有什么区别",
+        "最终本地验证与生产验收怎样区分"
+      ]
+    }
+  ],
+  "excludedFromUpload": [
+    "manifest.json",
+    "agent-system-prompt.md",
+    "docs/development/**",
+    "evaluation/**"
+  ],
+  "recommendedQuestions": [
+    {
+      "label": "看原文交付",
+      "question": "问档的资料原文怎样和来源编号对应，能保证什么？"
+    },
+    {
+      "label": "看检索指标",
+      "question": "正文索引相比标题索引，Hit@1和证据覆盖怎样变化？请说明样本和口径。"
+    },
+    {
+      "label": "看可靠执行",
+      "question": "进程中断、取消和租约失效时，问档怎样处理任务与迟到结果？"
+    }
+  ],
+  "evidence": [
+    "jchatmind/src/main/java/com/kama/jchatmind/agent/GroundedAnswerAssembler.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/agent/JChatMind.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/runs/RunResultWriter.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/runs/RunTerminalWriter.java",
+    "docs/provenance.md",
+    "docs/development/deliveries/durable-runs-drill.md",
+    "evaluation/runs/body-window-v2-report.md",
+    "jchatmind/src/main/java/com/kama/jchatmind/agent/JChatMindFactory.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/models/ModelCallDeadline.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/models/ModelRuntimeService.java",
+    "docs/development/deliveries/20261111-source-answer-fixes.md"
+  ],
+  "production": {
+    "status": "prepared"
+  },
+  "prompt": {
+    "file": "agent-system-prompt.md",
+    "sha256": "ded1b68101a4e2c48fa4f06f4fb0e2ee1d27df334e5416f6c7014a041ab7916c",
+    "bytes": 5506,
+    "placeholders": [
+      "__PROJECT_KB_ID__",
+      "__INTERVIEW_KB_ID__"
+    ],
+    "note": "逐字节复制v8业务提示词，不新增题目答案或预设交付模板；只在实际部署中替换两套知识库ID，提示词本身不入库。"
+  },
+  "localVerification": {
+    "jarSha256": "496f374233f970b9ecf23f09c051074910b5341c16ff9a861c5c206378647ec5",
+    "unitCases": 463,
+    "unitPassed": 459,
+    "unitSkipped": 4,
+    "postgresPassed": 70,
+    "postgresCodeScope": "最终26个相关运行类与postgres-r3已通过批次逐字节一致；不是重新声称每个网络调用在最终Jar上都已复跑。",
+    "candidateAcceptance": "pending",
+    "productionAcceptance": "pending"
+  }
+}

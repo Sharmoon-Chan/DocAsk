@@ -1,0 +1,268 @@
+{
+  "scope": "Content-release smoke checks, not a frozen retrieval benchmark.",
+  "excerptCheckCorrection": "The first probe compared the display ellipsis to literal source text. This independent check reproduces CitationRegistry.excerpt (300 UTF-16 units) without changing saved responses, document hashes or line ranges. Original attempts are retained.",
+  "plannedQuestions": 20,
+  "questionsWithCompletedEvidence": 20,
+  "agentRunsRecorded": 31,
+  "successfulAgentRuns": 25,
+  "selectedSuccessfulQuestions": 20,
+  "firstPassFailedQuestions": [
+    {
+      "id": "I08",
+      "errorCode": "EXECUTION_FAILED"
+    },
+    {
+      "id": "I14",
+      "errorCode": "INVALID_ANSWER_FORMAT"
+    },
+    {
+      "id": "I15",
+      "errorCode": "EXECUTION_FAILED"
+    },
+    {
+      "id": "P03",
+      "errorCode": "EXECUTION_FAILED"
+    }
+  ],
+  "sourceChecks": [
+    {
+      "id": "P01",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "03_contribution_map.md"
+      ],
+      "sessionId": "96617d0b-ae19-441c-a740-2ffac718f3f5"
+    },
+    {
+      "id": "P02",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 3,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "02_engineering_cases.md"
+      ],
+      "sessionId": "e6684363-069c-4f6e-af4e-bb4c2953e3ac"
+    },
+    {
+      "id": "P03",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 3,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "03_contribution_map.md"
+      ],
+      "sessionId": "f4d243a4-d3ad-4bc9-8a22-c11cf70cb79d"
+    },
+    {
+      "id": "I01",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "01_java_basics_collections.md"
+      ],
+      "sessionId": "a9284af4-429f-4995-a80b-ec38e5f1f738"
+    },
+    {
+      "id": "I02",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "02_java_concurrency.md"
+      ],
+      "sessionId": "89545ca8-8795-490f-a4d9-8a34aabfa010"
+    },
+    {
+      "id": "I03",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "02_java_concurrency.md"
+      ],
+      "sessionId": "ceb1073b-54b6-4402-8281-eb0d47fd7e56"
+    },
+    {
+      "id": "I04",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "03_jvm.md"
+      ],
+      "sessionId": "02d6415d-d878-4205-833a-62223fe26697"
+    },
+    {
+      "id": "I05",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "04_spring_transactions.md"
+      ],
+      "sessionId": "b8488950-6349-4778-90a7-e87e7dfa4964"
+    },
+    {
+      "id": "I06",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 3,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "06_mysql_transactions_locks.md"
+      ],
+      "sessionId": "7c04a34e-2b14-4236-9f16-6c3bbd885d23"
+    },
+    {
+      "id": "I07",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 3,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "05_mysql_indexes_sql.md"
+      ],
+      "sessionId": "44d048da-9f03-4440-b52d-45d76cfc24f2"
+    },
+    {
+      "id": "I08",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "07_redis_structures_persistence.md"
+      ],
+      "sessionId": "f9c53803-cd27-4f02-8c69-74ba94e0affa"
+    },
+    {
+      "id": "I09",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 3,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "08_redis_cache_concurrency.md"
+      ],
+      "sessionId": "349dd0b3-d7d7-4d28-bc08-5a1d0a1f7e61"
+    },
+    {
+      "id": "I10",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 1,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "07_redis_structures_persistence.md"
+      ],
+      "sessionId": "f859c345-924a-473b-8884-629122a761ed"
+    },
+    {
+      "id": "I11",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 1,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "09_computer_networks.md"
+      ],
+      "sessionId": "50107758-ca8e-497e-94f7-220ec828bf47"
+    },
+    {
+      "id": "I12",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 1,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "09_computer_networks.md"
+      ],
+      "sessionId": "3c40d895-30a5-49cb-a4f9-f8389a130f18"
+    },
+    {
+      "id": "I13",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 1,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "10_operating_systems.md"
+      ],
+      "sessionId": "df492761-a77e-4946-8bb1-c0348f77eb88"
+    },
+    {
+      "id": "I14",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "10_operating_systems.md"
+      ],
+      "sessionId": "c99a31d7-6430-419f-bc7c-3562075e6d8f"
+    },
+    {
+      "id": "I15",
+      "attempt": "a3",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 3,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "04_spring_transactions.md",
+        "06_mysql_transactions_locks.md"
+      ],
+      "sessionId": "e15ec7f6-3002-46d0-8a50-038bd631ae4a"
+    },
+    {
+      "id": "N01",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 2,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [],
+      "sessionId": "a1131675-24b0-4466-9c32-d35ac289c600"
+    },
+    {
+      "id": "N02",
+      "attempt": "a2",
+      "status": "SUCCEEDED",
+      "verifiedSources": true,
+      "sourceCount": 3,
+      "expectedKnowledgeBaseUsed": true,
+      "expectedFilesFound": [
+        "03_contribution_map.md"
+      ],
+      "sessionId": "b5057ce0-f4e1-4de4-adf0-e7dd890e287c"
+    }
+  ]
+}

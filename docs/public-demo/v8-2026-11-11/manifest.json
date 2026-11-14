@@ -1,0 +1,105 @@
+{
+  "version": "v8-2026-11-11",
+  "status": "prepared",
+  "preparedAt": "2026-11-11",
+  "knowledgeBaseName": "问档 DocAsk 项目资料（原文交付版，2026-11-11）",
+  "knowledgeBaseDescription": "问档的产品导览、工程案例与能力归属，介绍sourceAnswer资料原文交付、来源校验、持久化执行、权限和故障回退；历史50题评测与100题学习库分别说明。",
+  "verificationScope": "按当前源码与历史记录整理；最终测试数字及线上验收由发布记录回填，prepared不代表已经上线。",
+  "supersedes": "v7-2026-11-11 的公开项目介绍；旧版原件和历史冻结评测不改。",
+  "purpose": "面向演示访客介绍资料原文交付和可靠运行；只将documents列出的三篇正文入库。",
+  "changes": [
+    "公开实际工具统一为KnowledgeTool、getDate、sourceAnswer、terminate，模型只选择来源与原文锚点。",
+    "完整展示命中片段，由服务端生成编号；不把原文交付描述成自由生成答案的语义证明。",
+    "更新20步无答复、混合工具批次、取消与租约写前写后检查、线程中断和复合日期问题的处理。",
+    "说明模型故障分类、有界重试和明确的原文参考回退，不补造历史失败原因。",
+    "保留历史50题v1/v2计分结果，说明它们不属于100题学习库；混合检索与重排仍未实现。"
+  ],
+  "documents": [
+    {
+      "file": "01_product_guide.md",
+      "title": "问档 DocAsk 产品导览（原文交付版）",
+      "sha256": "ed57506a165cfb36eaa46201ceffb22c673cd61beeef7859d1ff0d5d2f9d80ea",
+      "bytes": 5876,
+      "answers": [
+        "问档能做什么",
+        "为什么展示资料原文",
+        "来源编号如何对应原文",
+        "资料不足与模型故障如何处理",
+        "日期和知识问题能否一起问"
+      ]
+    },
+    {
+      "file": "02_engineering_cases.md",
+      "title": "问档 DocAsk 工程案例（原文交付版）",
+      "sha256": "250f2635804e803d31b925c1d0186dc391f61359aaa8c1f572db5c093e1244b3",
+      "bytes": 9564,
+      "answers": [
+        "重复提交怎样去重",
+        "取消和租约失效怎样拒绝迟到写回",
+        "进程重启后哪些任务继续",
+        "后台权限与受限检索如何实现",
+        "原文交付如何处理引用错配",
+        "空答复与混合工具批次如何处理",
+        "模型故障怎样分类和回退",
+        "检索分数怎样重新计分"
+      ]
+    },
+    {
+      "file": "03_contribution_map.md",
+      "title": "问档 DocAsk 能力归属（原文交付版）",
+      "sha256": "7c894290b4cd8b9c629403d1f9d9a38a63ca61438a101fd1e6a7484fd52ebb14",
+      "bytes": 8144,
+      "answers": [
+        "哪些能力继承自JChatMind",
+        "本仓库新增了什么",
+        "公开实际工具有哪些",
+        "sourceAnswer能够保证什么",
+        "50题检索指标与口径",
+        "混合检索与重排是否完成",
+        "100题学习资料与历史评测有什么关系"
+      ]
+    }
+  ],
+  "excludedFromUpload": [
+    "manifest.json",
+    "agent-system-prompt.md",
+    "docs/development/**",
+    "evaluation/**"
+  ],
+  "recommendedQuestions": [
+    {
+      "label": "看原文交付",
+      "question": "问档的资料原文怎样和来源编号对应，能保证什么？"
+    },
+    {
+      "label": "看检索指标",
+      "question": "正文索引相比标题索引，Hit@1和证据覆盖怎样变化？请说明样本和口径。"
+    },
+    {
+      "label": "看可靠执行",
+      "question": "进程中断、取消和租约失效时，问档怎样处理任务与迟到结果？"
+    }
+  ],
+  "evidence": [
+    "jchatmind/src/main/java/com/kama/jchatmind/agent/GroundedAnswerAssembler.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/agent/JChatMind.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/runs/RunResultWriter.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/runs/RunTerminalWriter.java",
+    "docs/provenance.md",
+    "docs/development/deliveries/durable-runs-drill.md",
+    "evaluation/runs/body-window-v2-report.md"
+  ],
+  "production": {
+    "status": "prepared"
+  },
+  "prompt": {
+    "file": "agent-system-prompt.md",
+    "sha256": "ded1b68101a4e2c48fa4f06f4fb0e2ee1d27df334e5416f6c7014a041ab7916c",
+    "bytes": 5506,
+    "placeholders": [
+      "__PROJECT_KB_ID__",
+      "__INTERVIEW_KB_ID__"
+    ],
+    "note": "实际导入后替换两个知识库ID，再更新公开助手配置；提示词本身不入库。增加严格coverage部分覆盖提示，不能把模型覆盖声明当成语义证明。"
+  }
+}

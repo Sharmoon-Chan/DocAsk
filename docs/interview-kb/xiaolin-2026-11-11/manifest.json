@@ -1,0 +1,328 @@
+{
+  "version": "xiaolin-2026-11-11",
+  "preparedAt": "2026-11-11",
+  "knowledgeBaseName": "高频八股 · 小林 coding 学习整理（100 题）",
+  "knowledgeBaseDescription": "基于小林 coding 公开资料独立整理的 100 道 Java 后端与计算机基础学习问答，覆盖 Java/集合、并发、JVM、Spring、MySQL 索引与事务、Redis、TCP/HTTP、操作系统。逐题保留官方参考链接，非官方原文；高频表示复习优先级，不是考频统计。",
+  "totalQuestionCount": 100,
+  "documents": [
+    {
+      "file": "01_java_basics_collections.md",
+      "title": "Java 高频面试学习笔记：基础与集合",
+      "bytes": 8497,
+      "sha256": "9d5c50ab2bfa711ec35144a2b24d1310be488673d1e851ab11fdbe49fc26b605",
+      "questionCount": 10,
+      "questions": [
+        "equals 和 hashCode 为什么通常要一起重写？",
+        "Java 方法传参是值传递还是引用传递？",
+        "int 与 Integer 有什么区别，自动拆箱有哪些坑？",
+        "String 为什么不可变，StringBuilder 和 StringBuffer 怎么选？",
+        "金额计算为什么使用 BigDecimal，而不是直接用 double？",
+        "ArrayList 和 LinkedList 的差别是什么，谁更适合中间插入？",
+        "HashMap 的 put 和 get 大致经过哪些步骤？",
+        "HashMap 什么时候扩容、什么时候链表转红黑树？",
+        "遍历 List 时能删除元素吗，fail-fast 能保证线程安全吗？",
+        "HashSet、LinkedHashSet 和 TreeSet 怎样判断重复与顺序？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/interview/collections.html",
+        "https://xiaolincoding.com/interview/java.html"
+      ]
+    },
+    {
+      "file": "02_java_concurrency.md",
+      "title": "Java 高频面试学习笔记：并发与线程池",
+      "bytes": 8688,
+      "sha256": "1449ad02dc02a02a4f54ff1ec5b3b29d76113168187151bc9ef12e99a786889e",
+      "questionCount": 10,
+      "questions": [
+        "volatile 能保证什么，为什么 volatile int 的自增仍不安全？",
+        "synchronized 与 ReentrantLock 有哪些差别？",
+        "CAS 是什么，ABA 问题为什么需要版本信息？",
+        "AQS 解决什么问题，它和 CAS、ReentrantLock 是什么关系？",
+        "ThreadLocal 为什么可能内存滞留，在线程池里如何使用？",
+        "ThreadPoolExecutor 的七个参数和任务提交流程是什么？",
+        "线程池四种拒绝策略有什么区别，队列满了就一定拒绝吗？",
+        "sleep、wait 与 interrupt 的区别是什么？",
+        "ConcurrentHashMap 线程安全，为什么 containsKey 后 put 仍有竞争？",
+        "死锁的必要条件有哪些，怎么排查和避免？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/interview/juc.html"
+      ]
+    },
+    {
+      "file": "03_jvm.md",
+      "title": "Java 高频面试学习笔记：JVM 与垃圾回收",
+      "bytes": 8679,
+      "sha256": "035a388de1a9a7c0f425c2baedc6e38f053b92b9aed92563dac7b89fe9742119",
+      "questionCount": 10,
+      "questions": [
+        "JVM 运行时数据区与 Java 内存模型 JMM 是一回事吗？",
+        "堆和栈分别保存什么，-Xmx 与 -Xss 调整的是哪里？",
+        "元空间在堆里吗，为什么还会出现 Metaspace OOM？",
+        "类加载有哪些阶段，加载就一定执行静态代码块吗？",
+        "双亲委派是什么，能保证同名类在整个 JVM 里只有一份吗？",
+        "GC 怎样判断对象可回收，循环引用会阻止回收吗？",
+        "标记清除、复制和标记整理各有什么取舍？",
+        "G1 的 Region、Mixed GC 与停顿目标应该怎么理解？",
+        "内存泄漏和 OOM 有何区别，应该怎样开始排查？",
+        "TLAB 与逃逸分析是什么，对象一定在栈上或堆上实际分配吗？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/interview/jvm.html"
+      ]
+    },
+    {
+      "file": "04_spring_transactions.md",
+      "title": "Java 高频面试学习笔记：Spring 与事务",
+      "bytes": 9020,
+      "sha256": "4674f776b906dcf82d512b062d67cce594299fb25fb3106e8fe39a58b195f815",
+      "questionCount": 10,
+      "questions": [
+        "Spring IoC 与 DI 有什么关系，为什么常用构造器注入？",
+        "Spring 的 singleton Bean 天然线程安全吗，prototype 是每个请求一个吗？",
+        "Spring Bean 从创建到销毁经历哪些主要步骤？",
+        "Spring AOP 怎样实现，JDK 动态代理和 CGLIB 有什么限制？",
+        "Spring 三级缓存能解决所有循环依赖吗？",
+        "this 调用带有 @Transactional 的方法，事务到底会不会生效？",
+        "@Transactional 默认遇到哪些异常回滚，为什么 catch 后还可能提交？",
+        "REQUIRED、REQUIRES_NEW 和 NESTED 有什么差别？",
+        "Spring Boot 自动配置怎样生效，spring.factories 还在用吗？",
+        "Spring MVC 一次请求如何到达 Controller，统一异常处理在哪一层？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/interview/spring.html"
+      ]
+    },
+    {
+      "file": "05_mysql_indexes_sql.md",
+      "title": "Java 面试知识库：MySQL 索引与 SQL",
+      "bytes": 9534,
+      "sha256": "974b239f1744f66123abd1c7425992701361d35b65c3d66b63213123a388a67c",
+      "questionCount": 10,
+      "questions": [
+        "一条 SELECT 语句在 MySQL 中怎样执行？",
+        "为什么 InnoDB 常用 B+ 树，而不是哈希表或二叉树？",
+        "聚簇索引、二级索引、回表分别是什么？",
+        "联合索引的最左前缀原则是什么，遇到范围条件就全部失效吗？",
+        "覆盖索引和索引下推 ICP 有什么区别？",
+        "对索引列使用函数、计算或隐式类型转换有什么风险？",
+        "LIKE、OR、低区分度条件是不是一定导致索引失效？",
+        "怎样用 EXPLAIN 定位慢 SQL？",
+        "为什么深分页慢，游标分页和延迟关联各解决什么？",
+        "COUNT(*)、COUNT(1)、COUNT(列) 有什么区别？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/mysql/base/how_select.html",
+        "https://xiaolincoding.com/mysql/index/count.html",
+        "https://xiaolincoding.com/mysql/index/index_interview.html",
+        "https://xiaolincoding.com/mysql/index/index_lose.html",
+        "https://xiaolincoding.com/mysql/index/limit.html"
+      ]
+    },
+    {
+      "file": "06_mysql_transactions_locks.md",
+      "title": "Java 面试知识库：MySQL 事务、MVCC 与锁",
+      "bytes": 10147,
+      "sha256": "f7b5ca0f64c2e5bed45eeb78d0163f685a8404629844ff43f2cdd86bef69b6ee",
+      "questionCount": 10,
+      "questions": [
+        "事务的 ACID 分别是什么，由什么机制支持？",
+        "四种隔离级别和脏读、不可重复读、幻读如何对应？",
+        "MVCC 和 Read View 如何判断一个版本是否可见？",
+        "读提交 RC 和可重复读 RR 的 Read View 何时创建？",
+        "快照读与当前读有什么区别，RR 是否完全杜绝幻读？",
+        "行锁、表锁、意向锁和 MDL 分别保护什么？",
+        "间隙锁、临键锁的范围怎样理解，唯一等值查询有什么区别？",
+        "MySQL 死锁如何产生、排查和处理？",
+        "undo log、redo log、binlog 的职责有何不同？",
+        "redo 与 binlog 为什么需要两阶段提交，双一参数能保证什么？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/mysql/lock/deadlock.html",
+        "https://xiaolincoding.com/mysql/lock/how_to_lock.html",
+        "https://xiaolincoding.com/mysql/log/how_update.html",
+        "https://xiaolincoding.com/mysql/transaction/mvcc.html",
+        "https://xiaolincoding.com/mysql/transaction/phantom.html"
+      ]
+    },
+    {
+      "file": "07_redis_structures_persistence.md",
+      "title": "Java 面试知识库：Redis 数据结构与持久化",
+      "bytes": 10194,
+      "sha256": "f07d75443d981a1ff3c6cbfde270deec215a24b406f140a444f711f0cf2de709",
+      "questionCount": 10,
+      "questions": [
+        "Redis 常见数据类型如何选型？",
+        "Redis String 为什么使用 SDS，int、embstr、raw 是什么？",
+        "Redis Hash 在 6.x、7.0 中有什么编码差异？",
+        "Redis List、quicklist、ziplist、listpack 是什么关系？",
+        "Zset 为什么同时需要跳表和哈希表？",
+        "Redis 为什么快，它真的是完全单线程吗？",
+        "RDB 的 SAVE、BGSAVE 和 fork 写时复制如何工作？",
+        "AOF 的 always、everysec、no 三种刷盘策略怎样取舍？",
+        "AOF 重写如何缩小日志，Redis 7 的 MP-AOF 有何变化？",
+        "RDB、AOF、混合持久化应如何选择？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/redis/base/redis_interview.html",
+        "https://xiaolincoding.com/redis/data_struct/data_struct.html",
+        "https://xiaolincoding.com/redis/storage/aof.html",
+        "https://xiaolincoding.com/redis/storage/bigkey_aof_rdb.html",
+        "https://xiaolincoding.com/redis/storage/rdb.html"
+      ]
+    },
+    {
+      "file": "08_redis_cache_concurrency.md",
+      "title": "Java 面试知识库：Redis 缓存一致性与并发",
+      "bytes": 10429,
+      "sha256": "6982cfaa9d97b2d37cc93ba71040ea36c206350345b717c0c1eb7616847c580a",
+      "questionCount": 10,
+      "questions": [
+        "Cache Aside 为什么常用先更新数据库，再删除缓存？",
+        "缓存删除失败怎样补偿，延迟双删能保证一致性吗？",
+        "缓存穿透是什么，空值缓存与布隆过滤器有什么边界？",
+        "热点缓存击穿如何解决，互斥重建要注意什么？",
+        "缓存雪崩和击穿有什么区别，Redis 故障时能全部回源吗？",
+        "过期删除与内存淘汰有什么区别，LRU 和 LFU 怎么选？",
+        "Redis 分布式锁为什么需要原子加锁、唯一值和 Lua 解锁？",
+        "Lua、MULTI/EXEC、WATCH 和 Pipeline 分别解决什么？",
+        "主从复制、Sentinel、Cluster 的职责和一致性边界是什么？",
+        "BigKey 与 HotKey 有什么区别，怎样定位和治理？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/interview/systemdesign.html",
+        "https://xiaolincoding.com/redis/architecture/mysql_redis_consistency.html",
+        "https://xiaolincoding.com/redis/base/redis_interview.html",
+        "https://xiaolincoding.com/redis/cluster/cache_problem.html",
+        "https://xiaolincoding.com/redis/module/setnx.html",
+        "https://xiaolincoding.com/redis/module/strategy.html",
+        "https://xiaolincoding.com/redis/storage/bigkey_aof_rdb.html"
+      ]
+    },
+    {
+      "file": "09_computer_networks.md",
+      "title": "计算机网络高频基础题：10题学习整理",
+      "bytes": 10603,
+      "sha256": "71acad6060a7274db5b7297630e48c833cd047edd028418aae420c6f7b088b53",
+      "questionCount": 10,
+      "questions": [
+        "TCP 和 UDP 有什么区别，怎样选择？",
+        "TCP 为什么需要三次握手，两次不行吗？",
+        "TCP 为什么通常四次挥手，TIME_WAIT 有什么作用？",
+        "TCP 的流量控制与拥塞控制有什么区别？",
+        "TCP 粘包是什么，怎样正确读取一条消息？",
+        "HTTPS 相比 HTTP 多解决了什么，证书有什么用？",
+        "GET 与 POST 的区别，是参数位置不同吗？",
+        "HTTP/1.1、HTTP/2 和 HTTP/3 分别改进了什么？",
+        "HTTP 强缓存与协商缓存有什么区别？",
+        "从输入网址到页面显示，主要经过哪些步骤？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/network/1_base/what_happen_url.html",
+        "https://xiaolincoding.com/network/2_http/http_interview.html",
+        "https://xiaolincoding.com/network/3_tcp/tcp_feature.html",
+        "https://xiaolincoding.com/network/3_tcp/tcp_interview.html",
+        "https://xiaolincoding.com/network/3_tcp/tcp_three_fin.html"
+      ]
+    },
+    {
+      "file": "10_operating_systems.md",
+      "title": "操作系统高频基础题：10题学习整理",
+      "bytes": 11284,
+      "sha256": "8832e2a81f3266db27ec3d6daad208d890eab0b7fc184c26e57623b690b1cb49",
+      "questionCount": 10,
+      "questions": [
+        "进程和线程有什么区别，线程为什么通常更轻？",
+        "就绪、运行和阻塞怎样转换，上下文切换保存什么？",
+        "进程间有哪些通信方式，共享内存为什么还需要同步？",
+        "互斥锁和自旋锁分别适合什么场景？",
+        "死锁的必要条件是什么，怎样预防和排查？",
+        "为什么需要虚拟内存，分页怎样完成地址转换？",
+        "缺页异常怎样处理，页面置换有哪些常见策略？",
+        "用户态和内核态为什么分开，系统调用等于线程切换吗？",
+        "select、poll、epoll 有何区别，epoll 就是异步 I/O 吗？",
+        "零拷贝究竟减少什么，sendfile 与 mmap 有何区别？"
+      ],
+      "sourceUrls": [
+        "https://xiaolincoding.com/os/2_os_structure/linux_vs_windows.html",
+        "https://xiaolincoding.com/os/3_memory/vmem.html",
+        "https://xiaolincoding.com/os/4_process/deadlock.html",
+        "https://xiaolincoding.com/os/4_process/multithread_sync.html",
+        "https://xiaolincoding.com/os/4_process/pessim_and_optimi_lock.html",
+        "https://xiaolincoding.com/os/4_process/process_base.html",
+        "https://xiaolincoding.com/os/5_schedule/schedule.html",
+        "https://xiaolincoding.com/os/8_network_system/zero_copy.html"
+      ]
+    }
+  ],
+  "excludedFromUpload": [
+    "manifest.json",
+    "README.md",
+    "../verification-20261111/**"
+  ],
+  "production": {
+    "status": "published",
+    "publishedAt": "2026-11-11T15:33:36.987351+08:00",
+    "verifiedAt": "2026-11-11T15:34:38.291986+08:00",
+    "knowledgeBaseId": "ade05a56-4b71-4b5a-baad-ed46e6f08864",
+    "knowledgeBaseName": "高频八股 · 小林 coding 学习整理（100 题）",
+    "indexVersion": "body-v1",
+    "activeIndexRevisionId": "3f3fa631-d712-4cb4-badc-bb595ccd81b4",
+    "documentCount": 10,
+    "activeChunkCount": 110,
+    "documents": [
+      {
+        "file": "01_java_basics_collections.md",
+        "documentId": "26f508e1-6e41-420b-8910-9aa6a20e1e9e",
+        "sha256": "9d5c50ab2bfa711ec35144a2b24d1310be488673d1e851ab11fdbe49fc26b605"
+      },
+      {
+        "file": "02_java_concurrency.md",
+        "documentId": "14f46987-18db-4526-ac49-ea2b9534f134",
+        "sha256": "1449ad02dc02a02a4f54ff1ec5b3b29d76113168187151bc9ef12e99a786889e"
+      },
+      {
+        "file": "03_jvm.md",
+        "documentId": "ef0394a3-7522-4963-8f8a-0b8287d7979a",
+        "sha256": "035a388de1a9a7c0f425c2baedc6e38f053b92b9aed92563dac7b89fe9742119"
+      },
+      {
+        "file": "04_spring_transactions.md",
+        "documentId": "44f6b585-d9fd-4855-8cd0-bcf2d96ca089",
+        "sha256": "4674f776b906dcf82d512b062d67cce594299fb25fb3106e8fe39a58b195f815"
+      },
+      {
+        "file": "05_mysql_indexes_sql.md",
+        "documentId": "5a59cd1a-6bf2-4dd8-9d3b-1233a8f06528",
+        "sha256": "974b239f1744f66123abd1c7425992701361d35b65c3d66b63213123a388a67c"
+      },
+      {
+        "file": "06_mysql_transactions_locks.md",
+        "documentId": "3f504052-5d74-47de-9025-db4527eabcde",
+        "sha256": "f7b5ca0f64c2e5bed45eeb78d0163f685a8404629844ff43f2cdd86bef69b6ee"
+      },
+      {
+        "file": "07_redis_structures_persistence.md",
+        "documentId": "86221b83-844a-459b-9a79-9889d0c1ab10",
+        "sha256": "f07d75443d981a1ff3c6cbfde270deec215a24b406f140a444f711f0cf2de709"
+      },
+      {
+        "file": "08_redis_cache_concurrency.md",
+        "documentId": "08cd036d-442b-48ef-add4-2e1dd6ead569",
+        "sha256": "6982cfaa9d97b2d37cc93ba71040ea36c206350345b717c0c1eb7616847c580a"
+      },
+      {
+        "file": "09_computer_networks.md",
+        "documentId": "9d369c56-7ecd-4896-8f8c-4082d3ba4a0b",
+        "sha256": "71acad6060a7274db5b7297630e48c833cd047edd028418aae420c6f7b088b53"
+      },
+      {
+        "file": "10_operating_systems.md",
+        "documentId": "6164a05b-c471-4903-b5a9-284b9e07991c",
+        "sha256": "8832e2a81f3266db27ec3d6daad208d890eab0b7fc184c26e57623b690b1cb49"
+      }
+    ],
+    "receipt": "docs/interview-kb/verification-20261111/release-receipt.json"
+  }
+}

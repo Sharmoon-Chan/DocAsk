@@ -1,0 +1,430 @@
+{
+  "version": "v10-2026-11-11",
+  "status": "published",
+  "preparedAt": "2026-11-11",
+  "knowledgeBaseName": "问档 DocAsk 项目资料（可靠原文交付与分块边界，2026-11-11）",
+  "knowledgeBaseDescription": "产品导览、工程案例和能力归属；说明原文交付与部分覆盖、正常不足和未确认回退、每次模型同步期限及受限执行、检索组参考预算和正文分块严格进展。历史检索数字与学习资料独立说明。",
+  "verificationScope": "包含分块进展修复的本地package-r6：468项，464通过、4项既有环境跳过，5项新增分块与原件回归通过。同代码postgres-r6真实集成70项全部通过、无跳过；候选和生产结果不预填。",
+  "supersedes": "替换私有v9准备稿。v9触发原件、v8与已发布v7原件、旧运行及历史50题冻结检索结果继续保留，不缩短触发文档绕开缺陷。",
+  "purpose": "让私有候选的三篇项目正文与严格进展分块修复一致；只将documents条目入库。保持继承归属与历史检索原段，100题学习资料和业务提示词不改，不上传新测试问题或答案模板。",
+  "changes": [
+    "补充sourceAnswer的full/partial固定部分覆盖提示，以及insufficient与sources/coverage互斥；不把覆盖声明当语义证明。",
+    "没有既有本轮来源且此前尚未完成可读检索时，执行正常受限KnowledgeTool检查可读性；这次服务端读取不发布任意近邻，只给固定未确认提示。",
+    "已有检索的原文参考按真实完成的检索组轮流保留首条再补候选，最多三项，保留授权与范围去重；不宣称相关性或完整性已验证。",
+    "补充每次同步模型调用的30秒调用方期限、共享四个无等待队列传输槽、忽略中断仍占原槽及晚结果丢弃；不是整轮Agent30秒。",
+    "说明默认关闭模型内部自动工具执行并拒绝显式启用，工具和消息写入仍在Agent调用线程及正常守卫下完成。",
+    "保留原已验证交付与调用边界，新增分块严格进展及原件回归；本地468/464/4、同代码真实PostgreSQL70通过，候选和生产结果另行记录。",
+    "三份正文及历史计分段保持原件；提示词只补充通用的关系、组合保证与成立前提检索规则，代表复验和旧50次回归分别留存。",
+    "BodyChunker在单atom不能继续合并时严格前进，必要时first加一，防无限生成同Range；保留当前已输出内容，不跳过未处理atom。"
+  ],
+  "documents": [
+    {
+      "file": "01_product_guide.md",
+      "title": "问档 DocAsk 产品导览（2026-11-11 v10 原文交付版）",
+      "sha256": "03ec60062f486410fc28a13a0537e2792a29fab5d2ce5b13069a0875a75c9968",
+      "bytes": 8858,
+      "answers": [
+        "问档能做什么",
+        "为什么展示资料原文",
+        "来源编号如何对应原文",
+        "资料不足与模型故障如何处理",
+        "日期和知识问题能否一起问",
+        "只覆盖部分问题时怎样提示",
+        "资料入库与生效索引为什么要核验"
+      ]
+    },
+    {
+      "file": "02_engineering_cases.md",
+      "title": "问档 DocAsk 工程案例（2026-11-11 v10 原文交付版）",
+      "sha256": "637c98fe895d843b050c02eff3f56c1e9ba3128888c5c0267dedd7871e70864c",
+      "bytes": 15028,
+      "answers": [
+        "重复提交怎样去重",
+        "取消和租约失效怎样拒绝迟到写回",
+        "进程重启后哪些任务继续",
+        "后台权限与受限检索如何实现",
+        "原文交付如何处理引用错配",
+        "空答复与混合工具批次如何处理",
+        "模型故障怎样分类和回退",
+        "检索分数怎样重新计分",
+        "首次故障后为什么不发布任意近邻",
+        "每次同步调用期限与传输槽如何限制",
+        "默认与显式内部工具执行怎样受控",
+        "复合问题的原文参考怎样分配预算",
+        "正文分块如何严格前进并保持覆盖"
+      ]
+    },
+    {
+      "file": "03_contribution_map.md",
+      "title": "问档 DocAsk 能力归属（2026-11-11 v10 原文交付版）",
+      "sha256": "0625af7bcc55100be8d92b1c9b035c6ba19dc81f74b2a0c19d6050f3764ec44b",
+      "bytes": 10719,
+      "answers": [
+        "哪些能力继承自JChatMind",
+        "本仓库新增了什么",
+        "公开实际工具有哪些",
+        "sourceAnswer能够保证什么",
+        "50题检索指标与口径",
+        "混合检索与重排是否完成",
+        "100题学习资料与历史评测有什么关系",
+        "原文参考与检索级拒答有什么区别",
+        "最终本地验证与生产验收怎样区分",
+        "分块进展修复与历史检索指标有什么关系"
+      ]
+    }
+  ],
+  "excludedFromUpload": [
+    "manifest.json",
+    "agent-system-prompt.md",
+    "docs/development/**",
+    "evaluation/**"
+  ],
+  "recommendedQuestions": [
+    {
+      "label": "看原文交付",
+      "question": "问档的资料原文怎样和来源编号对应，能保证什么？"
+    },
+    {
+      "label": "看检索指标",
+      "question": "正文索引相比标题索引，Hit@1和证据覆盖怎样变化？请说明样本和口径。"
+    },
+    {
+      "label": "看可靠执行",
+      "question": "进程中断、取消和租约失效时，问档怎样处理任务与迟到结果？"
+    }
+  ],
+  "evidence": [
+    "jchatmind/src/main/java/com/kama/jchatmind/agent/GroundedAnswerAssembler.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/agent/JChatMind.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/runs/RunResultWriter.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/runs/RunTerminalWriter.java",
+    "docs/provenance.md",
+    "docs/development/deliveries/durable-runs-drill.md",
+    "evaluation/runs/body-window-v2-report.md",
+    "jchatmind/src/main/java/com/kama/jchatmind/agent/JChatMindFactory.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/models/ModelCallDeadline.java",
+    "jchatmind/src/main/java/com/kama/jchatmind/models/ModelRuntimeService.java",
+    "docs/development/deliveries/20261111-source-answer-fixes.md",
+    "jchatmind/src/main/java/com/kama/jchatmind/retrieval/BodyChunker.java",
+    "jchatmind/src/test/java/com/kama/jchatmind/retrieval/BodyChunkerTest.java"
+  ],
+  "production": {
+    "status": "published_scoped_demo_acceptance_complete",
+    "deploymentDate": "2026-11-11",
+    "operationDirectory": "/opt/exobrain/release-operations/hot-upgrade-20261111-233414-6c3292da4de2",
+    "applicationImage": "exobrain:20261111-6c3292da4de2",
+    "jarSha256": "6c3292da4de2cb82a6d8e7e342878acac70c2e6be8d4fae90a364dd1805f4fce",
+    "stagedReleaseManifestSha256": "7c6e1ec2e418f8f8412b2ccf76a54b30b7daa1f5a27827b40be44550b72df77f",
+    "stagedManifestKeptUnchanged": true,
+    "deploymentReceipt": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-hot-upgrade-receipt.json",
+    "corpusRefreshReceipt": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-corpus-refresh-receipt.json",
+    "knowledgeBaseId": "c8e7230a-d4f0-4283-add1-a4b4f738c192",
+    "projectDocuments": 3,
+    "activeProjectChunks": 40,
+    "activeIndexRevisionId": "eb7d9c87-1338-44fb-8525-e2d4093c3f2a",
+    "sourceIndexVerifiedAt": "2026-11-11T22:34:07.716043+08:00",
+    "documents": [
+      {
+        "file": "01_product_guide.md",
+        "sha256": "03ec60062f486410fc28a13a0537e2792a29fab5d2ce5b13069a0875a75c9968",
+        "documentId": "ee49a926-9b1c-4232-899e-87771ffa2abf",
+        "status": "SUCCEEDED"
+      },
+      {
+        "file": "02_engineering_cases.md",
+        "sha256": "637c98fe895d843b050c02eff3f56c1e9ba3128888c5c0267dedd7871e70864c",
+        "documentId": "5738b099-1139-4b48-a450-fae0bce843c0",
+        "status": "SUCCEEDED"
+      },
+      {
+        "file": "03_contribution_map.md",
+        "sha256": "0625af7bcc55100be8d92b1c9b035c6ba19dc81f74b2a0c19d6050f3764ec44b",
+        "documentId": "8f4e61e0-354b-4341-ad0c-d7d7f6b5d968",
+        "status": "SUCCEEDED"
+      }
+    ],
+    "publicKnowledgeBases": [
+      {
+        "scope": "project",
+        "id": "c8e7230a-d4f0-4283-add1-a4b4f738c192",
+        "documents": 3,
+        "activeChunks": 40
+      },
+      {
+        "scope": "interview",
+        "id": "ade05a56-4b71-4b5a-baad-ed46e6f08864",
+        "documents": 10,
+        "questions": 100,
+        "activeChunks": 110
+      }
+    ],
+    "promptTemplateSha256": "12beaec89a530a33df0f52b5d5ead871bb144867619a3b23b7c109d95576b680",
+    "resolvedPromptSha256": "affdb3728ba676b96bcb9999a1a2d9df7152c3d2124851b7dcce9ae2ea9f201d",
+    "runtimeConfigSha256": "e2929ba6afdde17608020f7023498c206d89459e54a6a50459c0c97a9b66615b",
+    "modelMinIntervalMs": 10000,
+    "maxConcurrentRuns": 1,
+    "showcaseSessionIds": [
+      "0a3624e3-686b-458e-a18d-700672a876a9",
+      "e5526f61-eff8-4869-9ff5-6f5e2fb67b7d",
+      "f9953edc-1fc5-4ab1-9af5-454ea079ff07",
+      "01e06354-f9f8-45f9-b973-aded2089ebfb",
+      "01d971ee-8a58-4091-b7e5-06dd94bedfce",
+      "788ab5a9-6833-4304-a0a4-9703a2ae39b0",
+      "a65b2180-8675-4444-a09c-cf791c7f0831",
+      "f1230e04-04f0-4698-b717-edfe606701af",
+      "fed17a8e-8c06-4a09-b649-da2a1dc68034",
+      "ae051204-4720-4705-a0ff-326cebfca16e"
+    ],
+    "liveQuestionAcceptance": {
+      "status": "SCOPED_ACCEPTANCE_COMPLETED_WITH_RECORDED_ISSUE",
+      "attempt": "production-guard-a2",
+      "runs": 9,
+      "normalSourceDeliveries": 7,
+      "actualDateDeliveries": 1,
+      "referenceFallbacks": 1,
+      "independentSemanticVerdicts": {
+        "PASS": 8,
+        "ISSUE": 1
+      },
+      "sourceBearingRuns": 8,
+      "sourceIntegrityPassed": 8,
+      "modelRequests": 17,
+      "failedModelRequests": 1,
+      "modelFailureKinds": {
+        "READ_TIMEOUT": 1
+      },
+      "observedHttp429": 0,
+      "knownResidualIssue": {
+        "caseId": "B14",
+        "kind": "READ_TIMEOUT",
+        "callerDeadlineMs": 30000,
+        "observedDeadlineFailureMs": 30004,
+        "delivery": "Explicit reference fallback; not model recovery",
+        "selectionNoise": "An unrelated MySQL pagination source remains in the reference budget",
+        "showcaseEligible": false
+      },
+      "receipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-hot-live-acceptance.json",
+        "sha256": "f7b437506ed51d4b77044f102d0d16d7c5968da72d44e909716a7b2e6b04dfb0"
+      }
+    },
+    "liveHttpBoundaryAcceptance": {
+      "passed": 14,
+      "total": 14,
+      "managementDenialExpectedHttp": 404,
+      "status": "PASSED_WITH_EXPLICIT_GATEWAY_404_EXPECTATION",
+      "original403Expectation13Of14Preserved": true,
+      "receipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-evidence/execution-production-guard-execution-a2.json",
+        "sha256": "f15708deff7b62ea454af65093c51867033f400c9aa4e1ad4a72014589551bd7"
+      }
+    },
+    "showcasePublication": {
+      "status": "REVIEWED_SHOWCASES_PUBLISHED",
+      "date": "2026-11-12",
+      "operationDirectory": "/opt/exobrain/release-operations/showcases-20261112-000128-e31295152196",
+      "showcases": 10,
+      "citations": 19,
+      "citedDocuments": 9,
+      "full": 9,
+      "partial": 1,
+      "fallbackShowcases": 0,
+      "answersUnedited": true,
+      "generationScope": "Seven normal c2 production records plus three normal 6c records; not a new ten-question availability benchmark.",
+      "receipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/reviewed-showcase-publication-receipt.json",
+        "sha256": "37ab044e6e0320414d725f42118129e6ad9a3221523e770f7c7b504517e3f5f2"
+      }
+    },
+    "metadataBackfilledAt": "2026-11-12T01:13:18.120667+08:00",
+    "initialCutover": {
+      "deploymentDate": "2026-11-11",
+      "operationDirectory": "/opt/exobrain/release-operations/cutover-20261111-223318-c2eee0126e90",
+      "applicationImage": "exobrain:20261111-c2eee0126e90",
+      "jarSha256": "c2eee0126e909a8e30b0783b39539b6315f8a627582288e71ead577006be6f43",
+      "deploymentReceipt": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-cutover-receipt.json",
+      "corpusRefreshReceipt": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-corpus-refresh-receipt.json",
+      "sourceIndexVerifiedAt": "2026-11-11T22:34:07.716043+08:00"
+    },
+    "stage": "Deployed engineering MVP with durable execution, access boundaries, body retrieval and source delivery; retrieval quality remains the next stage.",
+    "finalAcceptanceDate": "2026-11-12",
+    "jarBytes": 63020404,
+    "containerId": "c076ec11fc8a29da7668129bc84b98c94df3724e65f81e24ca12ee4fd3ddd697",
+    "imageId": "sha256:cbb551891463c6b688e303f3360a282bb56f69312e139c0142aa9af14a0e2dae",
+    "frontendDirectory": "/opt/exobrain/releases/source-answer-20261111-223318-c2eee0126e90",
+    "health": "healthy",
+    "restartCount": 0,
+    "maintenanceGateAbsent": true,
+    "finalHealthReceipt": {
+      "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-final-runtime-health-receipt.json",
+      "sha256": "5fa95c1a10eadd1297d55f50bd2dde8552d9b77c3142a76e8cf98f824649c57e"
+    },
+    "originalLocalVerificationRole": "The top-level localVerification is the frozen c2/r6 corpus-preparation baseline; current release checks are below.",
+    "currentReleaseVerification": {
+      "unitCases": 473,
+      "unitPassed": 469,
+      "existingWindowsSkips": 4,
+      "newCoverageLoopRegressionCasesPassed": 5,
+      "packageLog": "package-r7.log",
+      "postgresPassed": 70,
+      "postgresSkipped": 0,
+      "postgresLog": "postgres-r6.log",
+      "postgresScope": "PG-r6; relevant classes byte-identical in r7, not a new r7 PG run",
+      "relatedClassEquivalenceReceipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/c2-r6-to-6c-r7-class-equivalence.json",
+        "sha256": "935cfb7d3c186805c7e741a0df837754b7401740d7da085b97de81a8351b3009"
+      },
+      "backendReceipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/backend-release-guard.json",
+        "sha256": "f487d859a26229b69212e9bde0b1517f61d216cf796499a1fa0c7a3864ee85aa"
+      }
+    },
+    "retiredV7": {
+      "status": "PRIVATE_V7_RETIRED",
+      "date": "2026-11-12",
+      "knowledgeBaseId": "d424a1d6-476a-4880-aea7-b6d743c83537",
+      "knowledgeBasesDeleted": 1,
+      "documentsDeleted": 3,
+      "storageCleanupCompleted": true,
+      "freshBackupDirectory": "/opt/exobrain/backups/pre-reliability-20261112-001733-fc91317d",
+      "localFrozenHistoryPreserved": true,
+      "receipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/private-v7-retirement-receipt.json",
+        "sha256": "cb387edd00fec0eaae3202559504e1e2bb45297c6594cfc0539feada87a55c8f"
+      },
+      "backupReceipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/private-v7-retirement-backup-receipt.json",
+        "sha256": "2a5f2c4d01ccfd91d5d3281435c80341c787e0ff15366a1a1755feee4ec61f8a"
+      }
+    },
+    "candidateCleanup": {
+      "status": "FINAL_CANDIDATE_CLEANUP_COMPLETED",
+      "date": "2026-11-12",
+      "operationDirectory": "/opt/exobrain/release-operations/finalize-candidate-20261112-002158",
+      "removedContainerIds": [
+        "f065860a7f71832897809f6f16392623d5f7b174fcf1c14b976dd0e81062a5d5",
+        "a34c3427783553c62d2dd549a141b098bf8db6693da2281ce35549fe2275c416",
+        "d1f7344406b27bce22a6c6f59d48f22c01ad9b4b6d2cf700471ac0b3ec87454c",
+        "c3ee02dabe973c0830037331f2d8a11bf5f81e4f53e8ae80dcb775185651bdfa",
+        "b2bbaf5654573fcf943458b96c7c7abf909ff1328984cc08df41bf2d86a9448d",
+        "234119f6aa08d00b0cc95b5da516b179e9298425461f0442c932f85347a71eb6"
+      ],
+      "removedDatabase": "exobrain_candidate_20261111_1b511f5f610b",
+      "removedRole": "docask_candidate_20261111_1b511f5f610b",
+      "removedVolume": "docask_candidate_documents_20261111_1b511f5f610b",
+      "allImagesRetained": true,
+      "productionAppRestarted": false,
+      "cleanupRepeated": false,
+      "originalMountOrderFailureAndBaselinePreserved": true,
+      "freshProductionBackupDirectory": "/opt/exobrain/backups/pre-reliability-20261112-002205-6a8c2da2",
+      "candidateBackupDirectory": "/opt/exobrain/backups/candidate-final-20261112-002211-65f51bb8",
+      "receipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/final-candidate-cleanup-receipt.json",
+        "sha256": "a5aebf60b67ecb33a2e08e830684f3e24f7271be2a308b8c7526794b12adf43b"
+      },
+      "diffReceipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/candidate-cleanup-preservation-diff-receipt.json",
+        "sha256": "11dc26f852c387c531085884875524e303de40905b359017c741f322f36a7dd5"
+      }
+    },
+    "finalPublicVerification": {
+      "status": "PUBLIC_SHOWCASES_AND_SOURCES_VERIFIED",
+      "checkedAt": "2026-11-12T00:49:52.271493+08:00",
+      "publicDocuments": 13,
+      "showcases": 10,
+      "citations": 19,
+      "allPublicDocumentsHashVerified": true,
+      "allPublishedAnswersUnedited": true,
+      "testedOriginalOwnerWriteHttp": 403,
+      "testedForeignVisitorWriteHttp": 404,
+      "testedFirstShowcaseFullHistoryUnchangedAfterDeniedWrites": true,
+      "obsoleteKnowledgeBaseHidden404": true,
+      "scope": "Complete public source and published-answer checks; denied-write probes target the first showcase, not every write route.",
+      "originalWrong403ExpectationProbeUncapturedHttpPreserved": true,
+      "receipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-public-final-verification.json",
+        "sha256": "365e5eae1419d13c84588a9b1e3195511a2bb38f0325838c06c74bc4ec1de418"
+      },
+      "independentReview": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/final-public-and-date-independent-review.json",
+        "sha256": "b770c233c56b307d8d29efc729dd1131acb36726c4d55d99588b0dddb8414c47"
+      }
+    },
+    "midnightDateVerification": {
+      "verdict": "PASS",
+      "date": "2026-11-12",
+      "runId": "d6e11ea2-ccc0-42f4-bf87-56027a272583",
+      "sessionId": "5f6cec35-6947-43c6-8354-08f4d3529178",
+      "fallbackUsed": false,
+      "keptSeparateFromNineRunRegressionAndShowcases": true,
+      "receipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-midnight-date-review.json",
+        "sha256": "959b9f017623afb423b43034c3e3f1fc4f3ca5f173efd4c167bac94bf06997c9"
+      }
+    },
+    "browserVerification": {
+      "status": "PUBLIC_UI_VISUALLY_VERIFIED",
+      "checkedAt": "2026-11-12T00:59:01.242939+08:00",
+      "checksPassed": 6,
+      "scope": "Observed desktop viewport and real public interaction, not an exhaustive cross-device visual test or a general availability benchmark",
+      "receipt": {
+        "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-browser-final-verification.json",
+        "sha256": "e1e5c2c4dc56dab642a1e37c5a7ba4d6cd2318ba48a479a91df8a1c6172db08b"
+      },
+      "ownRun": {
+        "sessionId": "02450fd4-bdb8-4df5-abd7-45a758fe4e29",
+        "runId": "c5893c83-a966-4363-a3f8-4c8ae41a8ec9",
+        "status": "SUCCEEDED",
+        "durationMs": 24720,
+        "oneUserMessage": true,
+        "coverage": "partial",
+        "fallbackUsed": false,
+        "repairUsed": false,
+        "sourceRegistryAndFrozenBodyPassed": true,
+        "keptSeparateFromNineRunRegressionAndShowcases": true,
+        "receipt": {
+          "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/production-browser-own-run.json",
+          "sha256": "7fb8c1310eaa652f15f252ca688fd31b4a2b3312387094e2edbd237639cc85fc"
+        }
+      }
+    },
+    "localTestPostgresCleanupReceipt": {
+      "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/local-test-postgres-cleanup-receipt.json",
+      "sha256": "3c0fb54d61008ffb94bf39588baa41f40e5cf9d6ddf7b7b27d5f80537a22b28b"
+    },
+    "knownLimits": [
+      "One recorded production B14 call exceeded the 30-second caller deadline and returned explicit reference material; one unrelated SQL source remained. The run is excluded from curated examples.",
+      "Cross-resource vocabulary checks are necessary scope checks, not a general entailment proof.",
+      "Mixed keyword/vector retrieval, reranking and a calibrated retrieval rejection threshold are not implemented.",
+      "Historical 50-question retrieval scores and the independently summarized 100-question study corpus have different evaluation scopes."
+    ],
+    "finalReleaseAcceptanceReceipt": {
+      "file": "D:/TODO/Java/面试/模拟面试/work/docask-kb/20261111/fixes/final-demo-release-acceptance.json"
+    }
+  },
+  "prompt": {
+    "file": "agent-system-prompt.md",
+    "sha256": "12beaec89a530a33df0f52b5d5ead871bb144867619a3b23b7c109d95576b680",
+    "bytes": 6050,
+    "placeholders": [
+      "__PROJECT_KB_ID__",
+      "__INTERVIEW_KB_ID__"
+    ],
+    "note": "按关系、组合保证和成立前提补充通用检索与覆盖规则；原ded1提示词及其50次代码/资料回归另行保留，当前提示词的代表复验单独记录。提示词不入知识库。",
+    "previousTemplateSha256": "ded1b68101a4e2c48fa4f06f4fb0e2ee1d27df334e5416f6c7014a041ab7916c"
+  },
+  "localVerification": {
+    "jarSha256": "c2eee0126e909a8e30b0783b39539b6315f8a627582288e71ead577006be6f43",
+    "unitCases": 468,
+    "unitPassed": 464,
+    "unitSkipped": 4,
+    "newChunkerRegressionCasesPassed": 5,
+    "packageLog": "package-r6.log",
+    "postgresPassed": 70,
+    "postgresSkipped": 0,
+    "postgresLog": "postgres-r6.log",
+    "sameCodePostgresReverification": "passed",
+    "candidateAcceptance": "pending",
+    "productionAcceptance": "pending"
+  }
+}

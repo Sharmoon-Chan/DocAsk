@@ -3,8 +3,8 @@ export const IS_PUBLIC_DEMO = import.meta.env.VITE_PUBLIC_DEMO === "true";
 /**
  * 首页推荐问题（UX-03）。
  *
- * 文案与 UX-02 的资料内容一起校对：三个问题分别验证「30 秒读懂项目」「有原文出处的引用」
- * 「继承与新增的贡献边界」。提示词要求只依据公开资料回答并注明来源，避免把演示话术当成答案。
+ * 三个问题分别查找「项目功能与体验」「八股题的前提、机制与边界」
+ * 「继承与新增的贡献边界」的原文依据，与公开模式的原文展示保持一致。
  * 点击后直接创建发送意图并发送，不需要先填输入框。
  */
 export interface DemoPrompt {
@@ -18,22 +18,22 @@ export interface DemoPrompt {
 
 export const DEMO_PROMPTS: readonly DemoPrompt[] = [
   {
-    title: "30 秒了解这个项目",
-    description: "一句话加三个要点，说明能做什么",
+    title: "了解这个项目",
+    description: "从资料原文了解核心功能",
     prompt:
-      "用一句话和三个要点说明问档 DocAsk 能做什么，并指出我可以亲自体验的能力。",
+      "请检索问档 DocAsk 的产品导览，展示说明核心功能和体验方式的原文依据。",
   },
   {
-    title: "看一条有原文出处的回答",
-    description: "回答带可核对的原文位置",
+    title: "试一道有依据的八股题",
+    description: "看原文中的前提、机制和边界",
     prompt:
-      "这个项目如何让我核对答案的依据？请说明引用和原文的关系。",
+      "为什么 volatile 不能保证 i++ 的原子性？请检索资料，展示包含适用前提和处理办法的原文依据。",
   },
   {
     title: "作者新增了哪些能力",
     description: "区分上游已有与本仓库新增",
     prompt:
-      "在上游 JChatMind 的基础上，这个仓库新增了哪些能力？请区分继承和新增。",
+      "请检索问档的能力归属资料，展示区分上游继承与本仓库新增能力的原文。",
   },
 ] as const;
 

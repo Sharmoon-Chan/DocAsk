@@ -1,0 +1,45 @@
+{
+  "status": "published-and-verified",
+  "finishedAt": "2026-11-11T15:34:38.291986+08:00",
+  "publicKnowledgeBases": [
+    {
+      "id": "d424a1d6-476a-4880-aea7-b6d743c83537",
+      "name": "问档 DocAsk 项目资料（2026-11-11）"
+    },
+    {
+      "id": "ade05a56-4b71-4b5a-baad-ed46e6f08864",
+      "name": "高频八股 · 小林 coding 学习整理（100 题）"
+    }
+  ],
+  "activeIndexes": [
+    {
+      "kb_id": "d424a1d6-476a-4880-aea7-b6d743c83537",
+      "active_revision_id": "d17ee767-6e1d-47fd-89c2-531eb5fce1c0",
+      "documents": 3,
+      "active_chunks": 26
+    },
+    {
+      "kb_id": "ade05a56-4b71-4b5a-baad-ed46e6f08864",
+      "active_revision_id": "3f3fa631-d712-4cb4-badc-bb595ccd81b4",
+      "documents": 10,
+      "active_chunks": 110
+    }
+  ],
+  "deletedObsoleteKnowledgeBases": [
+    "2ad5d74f-b2ef-4ad1-8c1a-4c5bdbcfa3eb",
+    "ff9fc2f9-880c-4ec1-9516-22d068536f00",
+    "c3ac559d-30cb-456b-8a38-9c43475b6e6a"
+  ],
+  "deletedOldDocumentCount": 9,
+  "backupDirectory": "/opt/exobrain/backups/pre-kb-refresh-20261111-144923",
+  "backupDatabaseSha256": "ec19bd5619cbbbce7b5ab47337460131179d709625cc0880f277046e116c9628",
+  "backupDocumentsSha256": "a3f56abdb81616b4d7cc2c160af074b3d1bc9a7c11a1a88132be6e5c87f64ce7",
+  "backupDatabaseTocVerified": true,
+  "showcaseCount": 10,
+  "verifiedShowcaseCitations": 22,
+  "agentRuns": 31,
+  "succeededRuns": 25,
+  "failedRuns": 6,
+  "promptSha256": "10c993db243bd251c91fb11c274528145f864bb4f06b8032f2a7b360b4977cec",
+  "uiInspection": "In-app browser navigation timed out and its generated error page was blocked by the browser URL policy. No visual-layout or screenshot pass is claimed. Public HTTP/API and real question flows were verified."
+}

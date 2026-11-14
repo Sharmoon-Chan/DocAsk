@@ -9,3 +9,6 @@ __pycache__/
 .pytest_cache/
 
 # Published evaluation runs keep their own evidence files, including any run log.
+
+# Playwright traces and screenshots written while checking the UI by hand.
+/output/

@@ -1,0 +1,25 @@
+{
+  "purpose": "知识库内容发布后的抽样验收。验证问答、资料路由与来源可读，不是冻结检索 benchmark；不将这些问题或验收结果上传为知识库正文。",
+  "cases": [
+    {"id":"P01","title":"问档检索评测如何计分","question":"问档 DocAsk 的正文索引相比标题索引，50题评测的 Hit@1 和证据覆盖分别是多少？请说明样本与计分口径。","scope":"project","expectedFiles":["03_contribution_map.md"]},
+    {"id":"P02","title":"进程重启后任务怎么处理","question":"问档执行模型调用时进程被杀，会自动重跑这次任务吗？排队中的任务又怎样处理？","scope":"project","expectedFiles":["02_engineering_cases.md","01_product_guide.md","03_contribution_map.md"]},
+    {"id":"P03","title":"区分继承能力与检索计划","question":"问档的 Agent 循环是从零开发的吗？混合检索与重排现在已经上线了吗？","scope":"project","expectedFiles":["03_contribution_map.md"]},
+    {"id":"I01","title":"HashMap 什么时候树化","question":"HashMap 的一个桶里有8个元素，就一定马上变成红黑树吗？请结合 JDK 8 说明容量和普通 put 路径。","scope":"interview","expectedFiles":["01_java_basics_collections.md"]},
+    {"id":"I02","title":"volatile 为什么保不住 i++","question":"volatile 修饰的变量为什么执行 i++ 仍可能丢失更新？怎样保证这个计数操作的原子性？","scope":"interview","expectedFiles":["02_java_concurrency.md"]},
+    {"id":"I03","title":"线程池无界队列的影响","question":"线程池使用无界队列时，maximumPoolSize 为什么可能基本不起作用？任务提交后通常按什么顺序处理？","scope":"interview","expectedFiles":["02_java_concurrency.md"]},
+    {"id":"I04","title":"区分堆与线程栈参数","question":"-Xmx 和 -Xss 分别控制什么？深递归导致 StackOverflowError 时，增大堆一定有用吗？","scope":"interview","expectedFiles":["03_jvm.md"]},
+    {"id":"I05","title":"事务自调用与外层事务","question":"同一个类用 this 调用标了 @Transactional 的方法，会开启它声明的新事务吗？如果外层已经有事务呢？","scope":"interview","expectedFiles":["04_spring_transactions.md"]},
+    {"id":"I06","title":"RC 与 RR 的 Read View","question":"MySQL 的 READ COMMITTED 和 REPEATABLE READ，Read View 分别在什么时候创建？当前读也使用这个快照吗？","scope":"interview","expectedFiles":["06_mysql_transactions_locks.md"]},
+    {"id":"I07","title":"联合索引与最左前缀","question":"MySQL 有联合索引 (a,b,c)，只按 b 查询一定不能用任何索引吗？最左前缀原则应怎样准确表述？","scope":"interview","expectedFiles":["05_mysql_indexes_sql.md"]},
+    {"id":"I08","title":"RDB 与 AOF 怎么选","question":"Redis 的 RDB、AOF 和混合持久化各有什么取舍？只配置 AOF everysec 能保证宕机不丢任何数据吗？","scope":"interview","expectedFiles":["07_redis_structures_persistence.md"]},
+    {"id":"I09","title":"缓存更新能否保证强一致","question":"Cache Aside 先更新数据库再删除缓存，就一定能保证强一致吗？删除失败与并发旧值回填分别怎么处理？","scope":"interview","expectedFiles":["08_redis_cache_concurrency.md"]},
+    {"id":"I10","title":"Redis 真的是完全单线程吗","question":"Redis 常说单线程，为什么又有 I/O 多线程、后台持久化和异步释放？哪些工作需要区分？","scope":"interview","expectedFiles":["07_redis_structures_persistence.md"]},
+    {"id":"I11","title":"TCP 为什么需要三次握手","question":"TCP 建立连接为什么需要三次握手，第三次确认到底解决什么问题？","scope":"interview","expectedFiles":["09_computer_networks.md"]},
+    {"id":"I12","title":"TIME_WAIT 在哪一端","question":"TIME_WAIT 一定出现在客户端吗？为什么正常关闭要等待 2MSL？","scope":"interview","expectedFiles":["09_computer_networks.md"]},
+    {"id":"I13","title":"线程共享哪些资源","question":"同一进程中的线程共享哪些资源，线程自己的栈也共享吗？为什么线程切换通常更轻？","scope":"interview","expectedFiles":["10_operating_systems.md"]},
+    {"id":"I14","title":"虚拟内存与缺页异常","question":"进程的虚拟地址一定对应连续物理内存吗？访问的页面尚未驻留时，缺页异常会怎么处理？","scope":"interview","expectedFiles":["10_operating_systems.md"]},
+    {"id":"I15","title":"传播行为与隔离级别的区别","question":"Spring 事务传播行为和 MySQL 事务隔离级别分别解决什么问题？REQUIRES_NEW 与 REPEATABLE READ 是同一类配置吗？","scope":"interview","expectedFiles":["04_spring_transactions.md","06_mysql_transactions_locks.md"]},
+    {"id":"N01","title":"资料没有生产 QPS 时怎么办","question":"请给出示例商城上周生产数据库的实际峰值 QPS 和服务器配置。如果资料没有记载，请明确说明，不要估算。","scope":"insufficient","expectedFiles":[]},
+    {"id":"N02","title":"未实现的重排有没有效果数字","question":"问档上线混合检索和重排之后，准确率提升了多少？如果尚未实现或没有实测数据，请直接说明。","scope":"project","expectedFiles":["03_contribution_map.md"]}
+  ]
+}

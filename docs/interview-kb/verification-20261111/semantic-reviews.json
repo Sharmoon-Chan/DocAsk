@@ -1,0 +1,186 @@
+[
+  {
+    "id": "I05",
+    "attempt": "a3",
+    "verdict": "PASS",
+    "reason": "已重新审阅 a3 实际回答。准确限定默认代理模式：this 自调用不触发被调用方法的事务配置，已有外层事务时内层数据库操作仍可能参与外层，未错误地断言完全无事务。引用[1]对应 04_spring_transactions.md 第37–39行，直接支持自调用、跨 Bean/显式事务边界与异步线程边界；引用[2]第49–51行支持 REQUIRES_NEW、额外连接、NESTED 保存点及外层回滚的区别。核心事实与引文范围相符，未发现需阻断精选的问题。",
+    "showcaseSuitable": true,
+    "reviewFile": "semantic-review-a3-db.json"
+  },
+  {
+    "id": "I07",
+    "attempt": "a3",
+    "verdict": "ISSUE",
+    "reason": "已重新审阅 a3，仍存在场景迁移错误：回答在“只按后缀列 b 筛选”后直接说“此时 b 仍可能用于索引下推过滤”，并引用[1]。05_mysql_indexes_sql.md 第31–35行对 ICP 的说明是在后续段落讨论已有前缀/范围访问的后续列，而不是宣称仅按 b 就能启用 ICP；引用[3]第39–43行也先有姓名前缀访问路径。ICP 不能凭空补足缺失的最左列，普通全索引扫描并不因此自动获得 ICP。全索引/覆盖扫描和满足限制的跳跃扫描可以支持“不一定完全用不上索引”的主结论，但不能替这一条不受支持的 ICP 场景背书。此外“索引只能从最左列开始连续地用于确定扫描范围”应限定常规前缀范围定位，以免与前文承认的跳跃扫描例外冲突。本次不适合直接精选。",
+    "showcaseSuitable": false,
+    "reviewFile": "semantic-review-a3-db.json"
+  },
+  {
+    "id": "I08",
+    "attempt": "a3",
+    "verdict": "PASS",
+    "reason": "已重新审阅 a3。RDB 的快照恢复点、AOF 增量与恢复成本、混合持久化及 Redis 7 多文件边界，都由引用[1] 07_redis_structures_persistence.md 第79–83行支持。明确否定 everysec 保证宕机零丢失，保留约一秒并非所有故障下严格上限、write 与持久化不同的限定，与引用[2]第63–67行一致。末尾建议 always 获取更严格持久化并指出成本，没有将 always 说成任意故障下零丢失。",
+    "showcaseSuitable": true,
+    "reviewFile": "semantic-review-a3-db.json"
+  },
+  {
+    "id": "I11",
+    "attempt": "a3",
+    "verdict": "PASS",
+    "reason": "第三次ACK的方向、确认服务端初始序号、阻止滞留旧SYN被当作有效新连接及普通握手与Fast Open的边界，均得到引用[1]（09_computer_networks.md第15–19行）支持；没有发现旧轮的报文方向问题。",
+    "showcaseSuitable": true,
+    "reviewFile": "semantic-review-a3-network-os.json"
+  },
+  {
+    "id": "I13",
+    "attempt": "a3",
+    "verdict": "PASS",
+    "reason": "共享代码、堆和已打开文件，各线程拥有自己的寄存器状态、程序计数器和栈，以及同地址空间切换较轻但仍有调度与缓存成本，均由引用[1]（10_operating_systems.md第7–11行）支持；本轮没有附加不受来源支持的Java静态变量结论。",
+    "showcaseSuitable": true,
+    "reviewFile": "semantic-review-a3-network-os.json"
+  },
+  {
+    "id": "I14",
+    "attempt": "a3",
+    "verdict": "PASS",
+    "reason": "引用[2]（10_operating_systems.md第47–51行）支持连续虚拟空间不要求物理页连续及按需分配；引用[1]（第55–59行）支持缺页时先校验权限、合法访问分配或调入页面、更新映射后重试，以及缺页不必等于磁盘读取。核心事实与引用对应。",
+    "showcaseSuitable": true,
+    "reviewFile": "semantic-review-a3-network-os.json"
+  },
+  {
+    "id": "I15",
+    "attempt": "a3",
+    "verdict": "ISSUE",
+    "reason": "传播行为与隔离级别的区别、REQUIRES_NEW独立提交、RR的一致性读与当前读区别均有对应来源；但REQUIRES_NEW段末新增“默认代理模式下同类this调用不经过拦截器、拆到另一个Bean经代理调用”的建议并引用[1]。[1]仅为04_spring_transactions.md第49–51行的传播行为段，不含代理或自调用内容。该建议本身正确，但所挂引用不能支撑它；精选应删去该句或增加实际覆盖该机制的本轮来源。",
+    "showcaseSuitable": false,
+    "reviewFile": "semantic-review-a3-network-os.json"
+  },
+  {
+    "id": "P01",
+    "attempt": "a3",
+    "verdict": "PASS",
+    "reason": "正文/标题索引的Hit@1 35/40与26/40、Top-3必需证据覆盖43/44与34/44，以及4份文档、50题中40有答案/10无答案、dev30/test20均由来源[1]直接支撑。重新计分而未重新检索、正文窗口v2的事后诊断性质、旧frozen-v1结果与小样本边界得到[1][2]支撑。主要数字和解释正确，没有把这些检索指标扩大为答案准确率或新八股库效果。",
+    "showcaseSuitable": true,
+    "reviewFile": "semantic-review-a3-project.json"
+  },
+  {
+    "id": "P03",
+    "attempt": "a3",
+    "verdict": "ISSUE",
+    "reason": "继承Agent循环与MIT来源分别由[1][2]正确支撑，混合检索/重排尚未实现及无答案阈值未启用的事实也与材料一致；但第二段把‘尚未实现、需补充测试后实测’标成[2]，而[2]仅是03_contribution_map.md第3行的来源与许可说明。真正支持这一关键结论的是[3]（第71–74行），该编号却没有出现在回答正文。这是实质的引用指向错误，不能因来源列表包含正确片段就认定对应引用已经支撑，不宜作为精选。",
+    "showcaseSuitable": false,
+    "reviewFile": "semantic-review-a3-project.json"
+  },
+  {
+    "id": "I01",
+    "verdict": "PASS",
+    "reason": "核心判断正确：JDK 8 普通 put 路径在桶已有至少 8 个节点并追加新节点时尝试树化，数组容量不足 64 时优先扩容；并未把第 8 个节点无条件等同于立即树化。引用[1]对应 01_java_basics_collections.md 第49–51行，直接支持树化、容量和扩容分裂边界；引用[2]第43–45行支持 put/get 与桶内查找流程。回答末尾简写应结合前文明确的追加条件阅读，未发现影响核心答法的事实错误。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-java.json"
+  },
+  {
+    "id": "I02",
+    "verdict": "PASS",
+    "reason": "准确说明 volatile 的可见性及特定有序性不能把读取、计算、写回组成的 i++ 变为原子操作，并给出单变量原子计数或用同一把锁保护整体约束的方向。引用[1]对应 02_java_concurrency.md 第7–9行，支持丢更新和计数方案；引用[2]第19–21行支持 CAS、ABA、版本戳及多字段限制，没有把所有计数场景都说成存在 ABA 问题。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-java.json"
+  },
+  {
+    "id": "I03",
+    "verdict": "ISSUE",
+    "reason": "常规提交路径及 maximumPoolSize 通常不起扩容作用的解释正确，[1]对应 02_java_concurrency.md 第37–39行，[2]第43–45行也正确支持拒绝策略。问题是开头将来源的条件性表述“积压往往不会促使线程数扩到 maximumPoolSize”升级为“无界队列永远不会入队失败”，并以不传容量的 LinkedBlockingQueue 举例；该实现默认容量仍为 Integer.MAX_VALUE，并非无限资源或无条件接收保证。应限定为正常运行、队列能够继续接收的常见情形，保留任务容量、资源失败和关闭状态的边界。这是语义过度保证，不能由引用[1]证明；未将文中已明确标为推论的 OOM 说明当作引用错误。",
+    "showcaseSuitable": false,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-java.json"
+  },
+  {
+    "id": "I04",
+    "verdict": "PASS",
+    "reason": "正确区分 -Xmx/-Xms 的堆容量与 -Xss 的线程栈，以及深递归栈溢出和堆分配失败；先检查递归终止条件、谨慎调整栈和线程数量的建议与引用[1] 03_jvm.md 第13–15行一致。补充的 OOM 分类、分配与 GC 观察也由引用[2]第55–57行支持，没有将扩大堆描述为解决所有内存异常的办法。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-java.json"
+  },
+  {
+    "id": "I05",
+    "verdict": "PASS",
+    "reason": "核心结论与引用对应：默认代理模式下 this 自调用不触发被调用方法的新事务配置，但同线程的数据库操作仍可加入已经存在的外层事务。[1]对应 04_spring_transactions.md 第37–39行，支持自调用、REQUIRES_NEW 未按注解启用以及跨 Bean/显式事务边界的处理；[2]第49–51行支持独立事务、额外连接及 NESTED 保存点限制；[3]第3行支持 JDBC/代理模式前提。末尾把 AspectJ 织入放入“代理类型”括号不够严谨，但同时明确其无代理性质，未改变本题核心结论，未作为阻断问题。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-java.json"
+  },
+  {
+    "id": "I06",
+    "verdict": "PASS",
+    "reason": "准确区分 RC 每条普通一致性读新建视图、RR 通常首次一致性读建立并复用视图，以及 WITH CONSISTENT SNAPSHOT 的时机；没有把 BEGIN 或当前读误写成使用同一个快照。引用[1]对应 06_mysql_transactions_locks.md 第31–35行，[2]第39–43行支持当前读及锁冲突边界，[3]第23–27行支持 Read View 的创建时状态、版本判断和长事务延迟清理，核心内容均有对应依据。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-java.json"
+  },
+  {
+    "id": "I07",
+    "verdict": "ISSUE",
+    "reason": "关于只按 b 查询不应一概宣布所有索引不可用、可能使用覆盖/全索引扫描或满足条件的跳跃扫描，核心方向正确。真实问题出现在“只按 b 时索引可能的用途”中直接列出“索引下推 ICP 用 b 条件提前过滤候选记录”：引用[1] 05_mysql_indexes_sql.md 第31–35行讨论的是已有前缀/范围访问后续列仍可过滤，[2]第39–43行的示例也先有姓名前缀访问路径，均未支持把 ICP 泛化成仅后缀条件的访问方案。ICP 不能凭空补足缺失的最左列；普通全索引扫描不因此自动获得 ICP，跳跃扫描等也有自己的适用限制。需删除或限定这条场景化结论，保留访问路径与过滤方式的区别，再用于精选。",
+    "showcaseSuitable": false,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-java.json"
+  },
+  {
+    "id": "P01",
+    "verdict": "PASS",
+    "reason": "Hit@1 的 26/40→35/40、前三条必需证据覆盖 34/44→43/44、50题中40有答案/10无答案及dev/test规模均与来源[1][2]一致；事后body-window-v2、使用保存结果重新计分、保留frozen-v1旧结果与小样本限制得到[1][2][3]支撑，未把检索命中说成回答准确率。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-project-network.json"
+  },
+  {
+    "id": "P02",
+    "verdict": "PASS",
+    "reason": "RUNNING租约过期记中断且不自动重放、QUEUED继续领取、已登记取消保留取消语义，均由来源[2]直接支撑。20秒租约/22.1秒演练与默认120秒、同机双JVM及未验证范围交代准确；配置变化和外部调用非exactly-once分别得到[1][3]支撑。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-project-network.json"
+  },
+  {
+    "id": "I09",
+    "verdict": "PASS",
+    "reason": "先库后删仍存在删除失败及慢读旧值回填两类窗口，来源[2]直接支撑；可靠失效事件、binlog、有限收敛与延迟双删/TTL边界由[1]支撑。回答没有承诺强一致，也未将系统错误当作不存在，版本背景引用[3]正确。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-project-network.json"
+  },
+  {
+    "id": "I10",
+    "verdict": "PASS",
+    "reason": "在题目所问的后台持久化语境下，正确区分普通命令的主线程串行执行、Redis 6起可配置的网络I/O线程、后台线程与快照/重写子进程；GET/计算/SET组合仍有竞争和各类延迟来源均由来源[1]支撑。主要结论正确，未宣称Redis整个进程只有一个线程。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-project-network.json"
+  },
+  {
+    "id": "I11",
+    "verdict": "ISSUE",
+    "reason": "首段和要点1的三次握手流程正确，但要点2写成‘如果只有两次握手，服务端一收到SYN加ACK流程的回应就会……建立连接’，混淆了SYN+ACK的发送方与接收方。来源[1]表达的是服务端在发出第二次响应后、缺少客户端最终确认时过早接纳旧SYN；现有句子使关键因果解释与前面的正确报文流程矛盾，不宜直接用于精选示例。",
+    "showcaseSuitable": false,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-project-network.json"
+  },
+  {
+    "id": "I12",
+    "verdict": "PASS",
+    "reason": "主要结论为正常关闭场景下TIME_WAIT与主动关闭方向相关，服务端也可进入；等待2MSL用于降低旧报文影响并在对端重传FIN时再次确认，得到来源[1]支撑。ACK/FIN可合并、排查短连接与复用等补充也与来源一致，未将TIME_WAIT固定归给客户端。",
+    "showcaseSuitable": true,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-project-network.json"
+  },
+  {
+    "id": "I13",
+    "verdict": "ISSUE",
+    "reason": "进程资源共享、线程各自的寄存器/PC/栈以及同进程切换较轻的主要解释有来源[1]支撑；但回答额外断言Java‘方法区的静态变量’，引用的OS段落没有提供这一Java内存布局结论。在当前知识库讨论的JDK 8及以后HotSpot中，静态字段由堆中的Class镜像承载，不能不区分规范概念与实现就固定归到方法区。此处会与知识库JVM条目的版本边界冲突，建议去掉这句或另检索并准确解释后再作为精选。",
+    "showcaseSuitable": false,
+    "attempt": "a2",
+    "reviewFile": "semantic-review-project-network.json"
+  }
+]

@@ -2,6 +2,8 @@
 
 本文件说明问档 DocAsk 与上游项目的来源关系、保留的许可，以及本仓库实际新增的能力范围。所有判断以仓库中可核对的代码、脚本与提交记录为依据，不使用无法核对的表述。
 
+当前验收回填（2026-11-12）：6c热升级完成，v10项目3篇/40活动片段与学习10篇/100题/110片段保持。单元473项、469通过、4项既有环境跳过；真实PG70来自r6，r7数据库与索引相关类逐字节相同，不称重新执行PG。新生产9次运行独立8通过/1问题，8次来源完整性及14项HTTP复验通过；B14超时参考仍有不相关SQL来源。11-12实际发布10条真实精选、19引用、9份被引源文档；原文身份和必要作用范围词不构成语义蕴含证明，见[修复记录](development/deliveries/20261111-source-answer-fixes.md)。
+
 ## 1. 上游来源与许可
 
 - 本项目基于上游 **JChatMind**（<https://github.com/youngyangyang04/JChatMind>）持续开发。上游作者的版权声明与 [MIT License](../LICENSE) 完整保留：`LICENSE` 为 MIT 文本，版权行为 `Copyright (c) 2025 程序员Carl`。
@@ -43,17 +45,20 @@
 | 删除与持久文件清理 | 删除不留下可检索索引；文件清理写入 `exobrain_storage_cleanup` 并在提交后执行，失败持久重试 | `service/StorageCleanupService.java`、`service/impl/KnowledgeBaseFacadeServiceImpl.java`、`deploy/migrations/20261016-storage-cleanup.sql` |
 | 解析器并发隔离 | 移除单例中的请求正文状态，每次解析独立（任务 01） | `service/impl/MarkdownParserServiceImpl.java`、`docs/development/deliveries/01.md` |
 | 可重复检查与 CI | 统一检查脚本（`scripts/check.sh` / `scripts/check.ps1`）、测试分类 profile、GitHub Actions 无凭据工作流 | `scripts/**`、`.github/workflows/ci.yml`、`jchatmind/pom.xml` |
-| 正文索引与可核验引用 | 正文切块、活动 revision 原子发布、结构化来源、本轮引用登记与原文哈希/行号核验 | `retrieval/**`、`execution/**`、`ui/src/components/modals/DocumentPreviewDrawer.tsx` |
+| 正文索引与可核验引用 | 正文切块、严格起点进展、活动revision原子发布、结构化来源、本轮引用登记与原文哈希/行号核验；分块触发原件与通用重叠回归保留 | `retrieval/**`、`execution/**`、`ui/src/components/modals/DocumentPreviewDrawer.tsx` |
+| 公开资料原文交付 | sourceAnswer只选择本轮来源、连续原文锚点及full/partial覆盖状态；服务端完整摘录、自动编号并给出固定部分覆盖提示。无效交付修正一次，已有资料可交付明确参考，缺少可靠选择时给服务未完成提示；不判断源事实绝对正确或覆盖声明成立 | `agent/GroundedAnswerAssembler.java`、`agent/GroundedSourceRenderer.java`、`agent/tools/SourceAnswerTool.java`、`agent/JChatMind.java` |
+| 跨资源完整覆盖的必要证据约束 | 显式跨系统/服务/资源保证问题，所选已验证真实正文缺少作用范围词时拒绝full，进入既有一次修正；章节、未选文本与模型叙述不能补证。词出现仅是必要条件，不判断语义蕴含 | `agent/CrossResourceCoverageGuard.java`、`agent/JChatMind.java` |
+| 失败分类与执行边界 | 模型故障分类、有界重试、同步调用期限及共享最多4槽的无队列执行器；模型内部工具执行关闭；20步无答复失败、混合工具批次先校验、线程中断停止；普通消息与成功终态写前写后检查取消和租约 | `models/ModelCallFailure.java`、`models/ModelRetryPolicy.java`、`models/ModelCallDeadline.java`、`runs/RunResultWriter.java`、`runs/RunTerminalWriter.java` |
 | 运行追踪与持久任务 | 运行摘要和事件、导入与对话队列、租约/fencing、幂等提交、取消和中断语义 | `execution/**`、`ingestion/**`、`runs/**`、任务 03–07 交付记录 |
 | 首次访客与阅读恢复 | 推荐问题一键提交、同键重试、实际运行状态核对、独立来源入口、按运行关联组织消息、长回答阅读定位 | `ui/src/components/views/AgentChatView.tsx`、`agentChatView/**`、访客体验 UX-01–06 交付记录 |
 
 ### 仍未实现或未验证的边界
 
-正文索引、引用、追踪和持久任务已经实现，具体验证范围见 [任务 03–07 交付记录](development/deliveries/) 与 [UX-06 独立验收](development/visitor-experience/deliveries/UX-06.md)。仍未实现的包括逐字正文流式、自动模型降级、PDF/Word 解析、混合检索/重排、任意外部调用的 exactly-once。跨主机多实例、网络分区与真实多模型效果/成本对比仍缺验证；短答提示词的同模型对照不能替代多模型比较。
+正文索引、引用、追踪和持久任务已经实现，本轮6c已部署并完成指定现场与HTTP范围验收，历史范围见[交付记录](development/deliveries/)。原文交付及跨资源词检查不等于语义蕴含判断，也不替代检索质量评测；真实超时和回退选源噪声仍有记录。仍未实现逐字正文流式、自动切换备用模型、PDF/Word解析、混合检索/重排、任意外部调用的exactly-once。原文参考回退不属于自动切换模型；跨主机、网络分区及多模型效果成本对比仍缺验证。
 
 ## 4. 资料、语料与示例
 
-- v1 三份公开资料为本项目自写内容并保持冻结；[v2-2026-10-19](public-demo/v2-2026-10-19/manifest.json) 起改为产品导览、工程案例与能力归属三份，当前公开演示使用改名后的 [v6-2026-11-09](public-demo/v6-2026-11-09/manifest.json)。只有 manifest 列出的正文入库，提示词、问题清单、验收报告不入库。
+- v1三份自写公开资料保持冻结。当前生产使用[项目资料v10](public-demo/v10-2026-11-11/manifest.json)与[100题学习资料](interview-kb/xiaolin-2026-11-11/manifest.json)；旧v7库已于11-12完整备份后实际删除，本地原件和历史运行保留。v8/v9准备稿与v9触发原件继续用于复现，原v1/v2/v6线上库在11-11 v7发布时退役；只有manifest正文入库，提示词、问题清单、验收报告不入库。
 - `evaluation/` 下的冻结语料、题集与运行脚本、评测报告由任务 02 产出，属本项目自建评测资产，不来自上游。
 - 开发过程文档（`docs/development/**`）保留历史任务书与实际交付。判断当前状态时，以后续交付的提交、环境与验证证据为准，不把历史的“待实现”文字当成当前结论。
 - 仓库不包含生产凭据、私有语料或第三方受版权保护的资料；模型 API Key、数据库口令与密钥文件均位于仓库之外。

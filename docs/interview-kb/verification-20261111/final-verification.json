@@ -1,0 +1,176 @@
+{
+  "verifiedAt": "2026-11-11T15:34:38.291986+08:00",
+  "status": "PASS",
+  "origin": "https://docask.sharmoon.cc.cd",
+  "publicKnowledgeBases": [
+    {
+      "id": "d424a1d6-476a-4880-aea7-b6d743c83537",
+      "name": "问档 DocAsk 项目资料（2026-11-11）"
+    },
+    {
+      "id": "ade05a56-4b71-4b5a-baad-ed46e6f08864",
+      "name": "高频八股 · 小林 coding 学习整理（100 题）"
+    }
+  ],
+  "documentChecks": [
+    {
+      "file": "01_product_guide.md",
+      "documentId": "46e7fe54-bc74-4c93-bdde-015b6268af55",
+      "sha256Matches": true
+    },
+    {
+      "file": "02_engineering_cases.md",
+      "documentId": "1141f0ba-111e-4c8e-aace-1b00d93d8b50",
+      "sha256Matches": true
+    },
+    {
+      "file": "03_contribution_map.md",
+      "documentId": "629c2a85-8886-4117-b561-838972af3b5c",
+      "sha256Matches": true
+    },
+    {
+      "file": "01_java_basics_collections.md",
+      "documentId": "26f508e1-6e41-420b-8910-9aa6a20e1e9e",
+      "sha256Matches": true
+    },
+    {
+      "file": "02_java_concurrency.md",
+      "documentId": "14f46987-18db-4526-ac49-ea2b9534f134",
+      "sha256Matches": true
+    },
+    {
+      "file": "03_jvm.md",
+      "documentId": "ef0394a3-7522-4963-8f8a-0b8287d7979a",
+      "sha256Matches": true
+    },
+    {
+      "file": "04_spring_transactions.md",
+      "documentId": "44f6b585-d9fd-4855-8cd0-bcf2d96ca089",
+      "sha256Matches": true
+    },
+    {
+      "file": "05_mysql_indexes_sql.md",
+      "documentId": "5a59cd1a-6bf2-4dd8-9d3b-1233a8f06528",
+      "sha256Matches": true
+    },
+    {
+      "file": "06_mysql_transactions_locks.md",
+      "documentId": "3f504052-5d74-47de-9025-db4527eabcde",
+      "sha256Matches": true
+    },
+    {
+      "file": "07_redis_structures_persistence.md",
+      "documentId": "86221b83-844a-459b-9a79-9889d0c1ab10",
+      "sha256Matches": true
+    },
+    {
+      "file": "08_redis_cache_concurrency.md",
+      "documentId": "08cd036d-442b-48ef-add4-2e1dd6ead569",
+      "sha256Matches": true
+    },
+    {
+      "file": "09_computer_networks.md",
+      "documentId": "9d369c56-7ecd-4896-8f8c-4082d3ba4a0b",
+      "sha256Matches": true
+    },
+    {
+      "file": "10_operating_systems.md",
+      "documentId": "6164a05b-c471-4903-b5a9-284b9e07991c",
+      "sha256Matches": true
+    }
+  ],
+  "databaseCounts": {
+    "oldKnowledgeBases": 0,
+    "oldDocuments": 0,
+    "oldChunks": 0,
+    "pendingOldFileCleanup": 0,
+    "knowledgeBases": 2,
+    "documents": 13,
+    "sessions": 77
+  },
+  "publicShowcases": [
+    {
+      "id": "96617d0b-ae19-441c-a740-2ffac718f3f5",
+      "title": "问档检索评测如何计分",
+      "citations": 2
+    },
+    {
+      "id": "e6684363-069c-4f6e-af4e-bb4c2953e3ac",
+      "title": "进程重启后任务怎么处理",
+      "citations": 3
+    },
+    {
+      "id": "a9284af4-429f-4995-a80b-ec38e5f1f738",
+      "title": "HashMap 什么时候树化",
+      "citations": 2
+    },
+    {
+      "id": "89545ca8-8795-490f-a4d9-8a34aabfa010",
+      "title": "volatile 为什么保不住 i++",
+      "citations": 2
+    },
+    {
+      "id": "02d6415d-d878-4205-833a-62223fe26697",
+      "title": "区分堆与线程栈参数",
+      "citations": 2
+    },
+    {
+      "id": "b8488950-6349-4778-90a7-e87e7dfa4964",
+      "title": "事务自调用与外层事务",
+      "citations": 2
+    },
+    {
+      "id": "7c04a34e-2b14-4236-9f16-6c3bbd885d23",
+      "title": "RC 与 RR 的 Read View",
+      "citations": 3
+    },
+    {
+      "id": "349dd0b3-d7d7-4d28-bc08-5a1d0a1f7e61",
+      "title": "缓存更新能否保证强一致",
+      "citations": 3
+    },
+    {
+      "id": "3c40d895-30a5-49cb-a4f9-f8389a130f18",
+      "title": "TIME_WAIT 在哪一端",
+      "citations": 1
+    },
+    {
+      "id": "c99a31d7-6430-419f-bc7c-3562075e6d8f",
+      "title": "虚拟内存与缺页异常",
+      "citations": 2
+    }
+  ],
+  "verifiedShowcaseCitations": 22,
+  "pageChecks": [
+    {
+      "path": "/",
+      "status": 200
+    },
+    {
+      "path": "/health",
+      "status": 200
+    },
+    {
+      "path": "/showcase",
+      "status": 200
+    },
+    {
+      "path": "/admin/",
+      "status": 200
+    }
+  ],
+  "activeIndexes": [
+    {
+      "kb_id": "d424a1d6-476a-4880-aea7-b6d743c83537",
+      "active_revision_id": "d17ee767-6e1d-47fd-89c2-531eb5fce1c0",
+      "documents": 3,
+      "active_chunks": 26
+    },
+    {
+      "kb_id": "ade05a56-4b71-4b5a-baad-ed46e6f08864",
+      "active_revision_id": "3f3fa631-d712-4cb4-badc-bb595ccd81b4",
+      "documents": 10,
+      "active_chunks": 110
+    }
+  ]
+}

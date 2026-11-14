@@ -5,9 +5,20 @@ Both access modes remain available:
 - [Guest access / 游客免登录](https://docask.sharmoon.cc.cd/)
 - [Account and password / 账号登录](https://docask.sharmoon.cc.cd/admin/)
 
-The knowledge-base privacy release uses application image
-`exobrain:20261016-kb-privacy`, frontend release `20261016-kb-privacy`, Java 21,
-and timezone `Asia/Shanghai`. The backend uses Spring Boot 3.5.8, Spring AI 1.1.0,
+The earlier knowledge-base privacy template was verified with application image
+`exobrain:20261016-kb-privacy` and frontend release `20261016-kb-privacy`. The current
+production release is `exobrain:20261111-6c3292da4de2`, with retained frontend
+`source-answer-20261111-223318-c2eee0126e90`. The image-only hot upgrade preserved
+all three frozen v10 documents and active indexes. Targeted live and HTTP checks
+completed on November 11; ten reviewed showcases were published on November 12.
+The obsolete-v7 database and three document files were retired after a verified
+full sixteen-document backup on November 12. Candidate containers, database, role
+and document volume were archived then removed without restarting production;
+images and local history remain. Final public reads verified all thirteen
+documents and nineteen citations. Writes from the original showcase owner return
+403; a foreign visitor receives 404, with complete public histories unchanged.
+Java is 21 and timezone is
+`Asia/Shanghai`. The backend uses Spring Boot 3.5.8, Spring AI 1.1.0,
 MyBatis and PostgreSQL 17 with pgvector; the UI uses React 19, TypeScript and
 Ant Design. This guide contains reusable configuration, not production credentials.
 
@@ -261,22 +272,83 @@ only their freshly loaded runtime DTO's optional-tool list; the executor repeats
 this restriction after loading its own configuration. Selecting database, email
 or other tools in stored Agent settings therefore does not disable the public agent
 or enable those tools for visitors; unsafe database and file-system tools are also
-rejected in account runs. The isolated demo executor registers only
-`KnowledgeTool`, `getDate`, `directAnswer` and `terminate`; it does not register
-file, database, email, city or weather tools.
+rejected in account runs. The repaired demo executor explicitly registers only
+`KnowledgeTool`, `getDate`, `sourceAnswer` and `terminate`; it does not register
+file, database, email, city or weather tools. `SourceAnswerTool` is not a shared
+component and does not replace account-side delivery policies. It accepts only
+real source selections, evidence anchors and optional full/partial coverage, or a
+boolean insufficient signal after actual retrieval. The server renders complete
+source chunks and numbers, with a fixed notice for partial coverage. A model's
+coverage declaration does not establish semantic correctness.
 The application and JVM timezone are `Asia/Shanghai`, including the date tool.
 
-Create a dedicated knowledge base containing only reviewed, public Markdown
-project documentation. The repository includes the three documents used by the
-current public knowledge base:
+The deployed 6c artifact has 469 unit passes and four existing environment skips
+(473 total, package-r7). The 70 real PostgreSQL checks belong to postgres-r6;
+the database and index-related runtime classes are byte-identical in r7. This is
+not a fresh r7 PostgreSQL execution. Paragraph packing strictly advances the atom
+index; the v9 trigger bytes and five progress/original-document regressions remain.
+The public Factory receives the request gate explicitly. Each synchronous model
+request has a caller deadline, four shared transport slots and no waiting queue.
+An upstream that ignores interruption retains its slot until return; late results
+do not reach Agent persistence. Internal provider tool execution is disabled.
+The deadline does not include pacing waits or cover a whole multi-step run.
 
-- [Project overview](../docs/public-demo/01_exobrain_overview.md)
-- [RAG principles](../docs/public-demo/02_rag_principles.md)
-- [Java backend questions](../docs/public-demo/03_java_backend_faq.md)
+CrossResourceCoverageGuard rejects a full answer to an explicit cross-resource
+guarantee when the selected authentic bodies lack scope vocabulary, using the
+existing single repair opportunity. Vocabulary is only a necessary condition,
+not semantic entailment. The new production sample has nine runs: seven normal
+source answers, one actual date answer and one reference fallback. Independent
+review passed eight and flagged B14, whose 30-second deadline failure left an
+unrelated SQL reference. Eight citation-bearing runs passed provenance checks.
+Fourteen HTTP checks passed with the gateway's management-path 404 denial stated
+explicitly; the earlier 13/14 probe with a 403 expectation is retained. Seventeen
+model requests had one READ_TIMEOUT and no observed 429. These selected checks
+are not a general accuracy or availability benchmark. Follow the
+[repair delivery record](../docs/development/deliveries/20261111-source-answer-fixes.md)
+for exact scope, actual publication and subsequent cleanup receipts.
 
-Upload only these three content documents. The [test checklist](../docs/public-demo/99_test_questions.md)
-and [demo Agent system prompt](../docs/public-demo/agent-system-prompt.md) are
-maintenance references and must not be indexed as knowledge-base content.
+Six desktop browser checks also passed: the catalog, two expanded P01 sources,
+line 74-89 highlighting and hash confirmation, preview, B23's partial notice and
+a real start-own-run interaction. The new personal run completed normally with
+partial coverage in 24.720 seconds, one user input and no fallback or repair.
+It is separate from the nine-run regression and ten static showcases, and is
+not a latency or cross-device benchmark.
+
+The candidate cleanup initially stopped at a preservation assertion because
+Docker reordered the Mounts array. All four complete mount objects and other
+original snapshot fields matched; the original failure was retained, then the
+same operation reverified them and restored admission without repeating cleanup.
+The first final-public helper also incorrectly expected a fresh visitor to get
+403. Its uncaptured response is not retroactively labelled 404; fresh owner/foreign
+checks above provide the actual evidence. The separate post-midnight date-tool
+run returned 2026-11-12 and is not added to the nine-run regression.
+
+The historical November 11 15:34 v7 content release used two Markdown knowledge bases:
+
+- [Project documentation v7](../docs/public-demo/v7-2026-11-11/manifest.json):
+  product guide, engineering cases and contribution/measurement boundaries.
+- [Interview study notes](../docs/interview-kb/xiaolin-2026-11-11/manifest.json):
+  10 documents and 100 independently summarized questions based on Xiaolin Coding,
+  with original reference links retained per question.
+
+Upload only each manifest's `documents` entries. README files, manifests,
+verification questions/reports and the [Agent prompt](../docs/public-demo/v7-2026-11-11/agent-system-prompt.md)
+are maintenance references and must not be indexed. The 2026-11-11 content release
+backed up and retired the three obsolete public knowledge bases, retained chat
+text, and replaced the curated examples so their citations use current documents.
+Historical source files remain in the repository for reproducibility.
+
+The deployed release uses the [v10 project corpus](../docs/public-demo/v10-2026-11-11/manifest.json)
+and its [sourceAnswer prompt](../docs/public-demo/v10-2026-11-11/agent-system-prompt.md).
+The three document bodies remain frozen. The current prompt adds generic relation
+and combined-guarantee guidance; use the current manifest's prompt hash rather
+than the archived ded1 template hash. The prior 50-run code/corpus regression and
+the current thirteen-run representative prompt follow-up are reported separately.
+Resolve both KB placeholders only from the actual import receipt. v8/v9 remain
+preparation history, and historical v7 counts are not current production counts.
+The ten newly published showcases have nineteen citations and nine cited source
+documents; they preserve the actual production answers. Frozen bodies and earlier
+failed attempts must not be rewritten to manufacture a later result.
 
 Indexing behaviour depends on which policy the knowledge base is on, and the two
 must not be mixed:

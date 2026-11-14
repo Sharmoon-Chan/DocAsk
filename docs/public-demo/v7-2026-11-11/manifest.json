@@ -1,0 +1,130 @@
+{
+  "version": "v7-2026-11-11",
+  "verifiedAt": "2026-11-11",
+  "verificationScope": "正文依据现有源码、冻结评测原始结果和已保存的历史验证记录校对；本次资料整理不代表新的线上验收。",
+  "supersedes": "v6-2026-11-09 的项目介绍正文；历史原件与评测语料保持原样。线上可见范围以实际发布状态为准。",
+  "purpose": "更新问档 DocAsk 的产品用途、工程案例和能力归属；仅将 documents 中的三份访客正文入库。",
+  "changes": [
+    "补充正文窗口 body-window-v2 的同口径重新计分结果，并保留 frozen-v1 的旧结果和事后口径说明。",
+    "不再引用不断变化的线上运行总数、近期成功次数或用户数量。",
+    "明确混合检索和重排未实现，检索级拒答阈值开关未启用。",
+    "收窄 fencing、完成判定与取消语义；明确同机演练参数和20步上限分支的边界。",
+    "介绍八股学习资料的用途、独立整理和来源标注，不预填新知识库的上线验证或检索成绩。"
+  ],
+  "documents": [
+    {
+      "file": "01_product_guide.md",
+      "title": "问档 DocAsk 产品导览",
+      "sha256": "be178f6dc92ee8c16c1ac642781f054b5f0bf8f364c90195dd34bafc83a78b3b",
+      "bytes": 4399,
+      "answers": [
+        "问档 DocAsk 能做什么",
+        "怎样体验一次有出处的问答",
+        "引用能保证什么",
+        "没有拿到回答时怎么办",
+        "公开学习资料如何使用"
+      ]
+    },
+    {
+      "file": "02_engineering_cases.md",
+      "title": "问档 DocAsk 工程案例",
+      "sha256": "144a41413a5471aea0daf08590631edeb20e8e848130f7a554c88a1e7be49686",
+      "bytes": 8101,
+      "answers": [
+        "重复提交为什么不会新建两次运行",
+        "取消后迟到的答复怎样处理",
+        "重启后哪些任务能够恢复",
+        "数据库行锁为什么影响模型执行",
+        "后台执行按谁的权限调用工具",
+        "为什么用专用工具交付答复",
+        "上一轮失败如何进入下一轮",
+        "怎样区分检索问题与计分问题"
+      ]
+    },
+    {
+      "file": "03_contribution_map.md",
+      "title": "问档 DocAsk 能力归属",
+      "sha256": "29086b67af5eab8d6a403168d2516ed870b957b234d2af25cdfca4e3260a0dbb",
+      "bytes": 7718,
+      "answers": [
+        "哪些能力继承自 JChatMind",
+        "本仓库新增了什么",
+        "验证过哪些行为",
+        "引用编号与原文怎样对应",
+        "当前正文检索链路是什么",
+        "50题检索评测说明了什么",
+        "混合检索重排和拒答是否已经实现",
+        "八股学习资料与检索评测有什么关系"
+      ]
+    }
+  ],
+  "excludedFromUpload": [
+    "manifest.json",
+    "agent-system-prompt.md",
+    "docs/development/**",
+    "evaluation/**"
+  ],
+  "recommendedQuestions": [
+    {
+      "label": "了解问档",
+      "question": "用一句话和三个要点介绍问档 DocAsk，我能在这里体验什么？"
+    },
+    {
+      "label": "看检索改进",
+      "question": "问档的正文检索相比原来的标题检索有什么改进？请说明样本和计分口径。"
+    },
+    {
+      "label": "区分继承与新增",
+      "question": "哪些能力继承自 JChatMind，哪些是问档新增的？"
+    }
+  ],
+  "followUps": [
+    "为什么进程中断后不自动重放？",
+    "Hit@3 为100%是否代表回答全部正确？"
+  ],
+  "evidence": [
+    "docs/provenance.md",
+    "docs/development/deliveries/07.md",
+    "docs/development/deliveries/durable-runs-drill.md",
+    "evaluation/runs/body-window-v2-report.md",
+    "evaluation/datasets/criteria-v2.json"
+  ],
+  "production": {
+    "status": "published",
+    "publishedAt": "2026-11-11T15:33:36.987351+08:00",
+    "verifiedAt": "2026-11-11T15:34:38.291986+08:00",
+    "knowledgeBaseId": "d424a1d6-476a-4880-aea7-b6d743c83537",
+    "knowledgeBaseName": "问档 DocAsk 项目资料（2026-11-11）",
+    "indexVersion": "body-v1",
+    "activeIndexRevisionId": "d17ee767-6e1d-47fd-89c2-531eb5fce1c0",
+    "documentCount": 3,
+    "activeChunkCount": 26,
+    "documents": [
+      {
+        "file": "01_product_guide.md",
+        "documentId": "46e7fe54-bc74-4c93-bdde-015b6268af55",
+        "sha256": "be178f6dc92ee8c16c1ac642781f054b5f0bf8f364c90195dd34bafc83a78b3b"
+      },
+      {
+        "file": "02_engineering_cases.md",
+        "documentId": "1141f0ba-111e-4c8e-aace-1b00d93d8b50",
+        "sha256": "144a41413a5471aea0daf08590631edeb20e8e848130f7a554c88a1e7be49686"
+      },
+      {
+        "file": "03_contribution_map.md",
+        "documentId": "629c2a85-8886-4117-b561-838972af3b5c",
+        "sha256": "29086b67af5eab8d6a403168d2516ed870b957b234d2af25cdfca4e3260a0dbb"
+      }
+    ],
+    "receipt": "docs/interview-kb/verification-20261111/release-receipt.json"
+  },
+  "knowledgeBaseName": "问档 DocAsk 项目资料（2026-11-11）",
+  "knowledgeBaseDescription": "问档 DocAsk 最新产品导览、工程案例、能力归属与检索评测口径。供项目介绍和实现问题检索，历史评测不代表新增八股库成绩。",
+  "prompt": {
+    "file": "agent-system-prompt.md",
+    "bytes": 4012,
+    "sha256": "c48f741ea25bd49f2c8430b675b9341b701593f9ac3ab07915c1dd458b6988af",
+    "note": "按部署回执替换两个知识库 ID 后写入助手配置，不入库。",
+    "resolvedProductionSha256": "10c993db243bd251c91fb11c274528145f864bb4f06b8032f2a7b360b4977cec"
+  }
+}
