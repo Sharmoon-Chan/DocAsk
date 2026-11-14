@@ -157,7 +157,7 @@ class DemoControllerTest {
         mvc.perform(get("/api/demo/documents/kb/invalid").cookie(first)).andExpect(status().isNotFound());
         mvc.perform(get("/api/demo/tools").cookie(first)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[*].name").value(org.hamcrest.Matchers.containsInAnyOrder(
-                        "KnowledgeTool", "getDate", "directAnswer", "terminate")));
+                        "KnowledgeTool", "getDate", "sourceAnswer", "terminate")));
         verify(knowledgeBases, never()).selectAll();
         verify(documents, never()).selectAll();
         verify(documents, never()).selectByKbId(PRIVATE_KB);

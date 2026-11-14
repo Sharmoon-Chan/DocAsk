@@ -3,6 +3,7 @@ package com.kama.jchatmind.demo;
 import com.kama.jchatmind.agent.JChatMind;
 import com.kama.jchatmind.agent.JChatMindFactory;
 import com.kama.jchatmind.agent.tools.DirectAnswerTool;
+import com.kama.jchatmind.agent.tools.SourceAnswerTool;
 import com.kama.jchatmind.agent.tools.TerminateTool;
 import com.kama.jchatmind.agent.tools.test.DateTool;
 import com.kama.jchatmind.config.ChatClientRegistry;
@@ -14,6 +15,7 @@ import com.kama.jchatmind.mapper.AgentMapper;
 import com.kama.jchatmind.mapper.KnowledgeBaseMapper;
 import com.kama.jchatmind.model.dto.AgentDTO;
 import com.kama.jchatmind.model.response.CreateChatMessageResponse;
+import com.kama.jchatmind.models.ModelRequestGate;
 import com.kama.jchatmind.retrieval.RetrievalService;
 import com.kama.jchatmind.runs.RunQueueRepository;
 import com.kama.jchatmind.runs.RunSubmissionException;
@@ -49,10 +51,11 @@ public class DemoExecutionService {
                                 KnowledgeBaseConverter knowledgeConverter, ChatMessageFacadeService messages,
                                 ChatMessageConverter messageConverter, DateTool date, TerminateTool terminate,
                                 DirectAnswerTool answer, RetrievalService retrieval, DemoAccessPolicy access,
-                                RunSubmissionService submissions, RunQueueRepository jobs) {
+                                RunSubmissionService submissions, RunQueueRepository jobs,
+                                ModelRequestGate modelRequestGate) {
         this.factory = new JChatMindFactory(clients, sse, agents, agentConverter, knowledgeBases,
-                knowledgeConverter, new ToolFacadeServiceImpl(List.of(date, terminate, answer,
-                new DemoKnowledgeTool(retrieval, access)), false), messages, messageConverter);
+                knowledgeConverter, new ToolFacadeServiceImpl(List.of(date, terminate, new SourceAnswerTool(),
+                new DemoKnowledgeTool(retrieval, access)), false), messages, messageConverter, modelRequestGate);
         this.access = access;
         this.submissions = submissions;
         this.jobs = jobs;

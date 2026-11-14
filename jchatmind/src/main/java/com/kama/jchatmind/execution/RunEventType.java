@@ -9,7 +9,9 @@ package com.kama.jchatmind.execution;
  *   <li>{@code TOOL_CALL}：一次真实执行完成的工具调用（模型“计划”但未执行的调用不产生事件）。</li>
  *   <li>{@code RETRIEVAL}：工具返回的检索信封，按 {@code retrievalId} 关联。</li>
  *   <li>{@code PERSIST_MESSAGE}：一次消息落库。</li>
- *   <li>{@code STEP_LIMIT}：达到循环步数上限而结束（不是失败，但需要明确记录）。</li>
+ *   <li>{@code STEP_LIMIT}：达到循环步数上限；没有实际交付时为失败。</li>
+ *   <li>{@code DELIVERY_REPAIR}：交付未通过校验，尚未发布答案，要求一次格式修正。</li>
+ *   <li>{@code ANSWER_FALLBACK}：模型不可用或交付仍无效，明确交付已检索的原文参考。</li>
  *   <li>{@code ERROR}：本次运行以失败终止（安全错误码）。</li>
  * </ul>
  *
@@ -22,5 +24,7 @@ public enum RunEventType {
     RETRIEVAL,
     PERSIST_MESSAGE,
     STEP_LIMIT,
+    DELIVERY_REPAIR,
+    ANSWER_FALLBACK,
     ERROR
 }

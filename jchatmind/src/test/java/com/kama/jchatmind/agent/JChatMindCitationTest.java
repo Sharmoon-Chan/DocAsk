@@ -97,18 +97,18 @@ class JChatMindCitationTest {
     }
 
     @Test
-    @DisplayName("fabricated, foreign and never-executed ids produce no citation at all")
-    void fabricatedOrForeignIdsProduceNoCitations() throws Exception {
+    @DisplayName("explicit fabricated, foreign and never-executed ids reject the answer even without prose markers")
+    void fabricatedOrForeignIdsRejectTheAnswer() throws Exception {
         String envelope = envelope(RetrievalEnvelope.ok("ret-1", List.of(hit("ret-1:1", "chunk-a", "片段", 1, 1, 2))));
         List<ChatMessageDTO> saved = new ArrayList<>();
-        run(List.of(
+        RuntimeException error = assertThrows(RuntimeException.class, () -> run(List.of(
                 knowledgeRound("call-k1", envelope),
                 answerRound("call-a1", "回答正文",
                         "[\"made-up:1\",\"other-session-retrieval:1\",\"ret-1:99\",\"99999999-9999-4999-8999-999999999999\"]")),
-                saved, List.of(kb(KB)), envelope);
-
-        assertNull(answerIn(saved).getMetadata().getCitations(),
-                "no citation may be fabricated for unknown ids");
+                saved, List.of(kb(KB)), envelope));
+        assertEquals("INVALID_ANSWER_FORMAT", RunLifecycleService.classify(error));
+        assertFalse(saved.stream().anyMatch(message -> message.getRole() == ChatMessageDTO.RoleType.ASSISTANT
+                && message.getContent() != null && !message.getContent().isEmpty()));
     }
 
     @Test
@@ -139,15 +139,16 @@ class JChatMindCitationTest {
     }
 
     @Test
-    void anUnreferencedRejectedIdDoesNotShiftTheMeaningOfAValidMarker() throws Exception {
+    void anUnreferencedInvalidIdCannotSilentlyDisappear() throws Exception {
         String envelope = envelope(RetrievalEnvelope.ok("ret-1", List.of(
                 hit("ret-1:1", "chunk-a", "真实片段", 1, 3, 5))));
         List<ChatMessageDTO> saved = new ArrayList<>();
-        run(List.of(knowledgeRound("call-k1", envelope),
+        RuntimeException error = assertThrows(RuntimeException.class, () -> run(List.of(knowledgeRound("call-k1", envelope),
                 answerRound("call-a1", "真实片段支持这句话 [2]。", "[\"unknown:1\",\"ret-1:1\"]")),
-                saved, List.of(kb(KB)), envelope);
-        assertEquals("真实片段支持这句话 [1]。", answerIn(saved).getContent());
-        assertEquals("chunk-a", answerIn(saved).getMetadata().getCitations().getFirst().chunkId());
+                saved, List.of(kb(KB)), envelope));
+        assertEquals("INVALID_ANSWER_FORMAT", RunLifecycleService.classify(error));
+        assertFalse(saved.stream().anyMatch(message -> message.getRole() == ChatMessageDTO.RoleType.ASSISTANT
+                && message.getContent() != null && !message.getContent().isEmpty()));
     }
 
     @Test
@@ -245,25 +246,24 @@ class JChatMindCitationTest {
         String envelope = envelope(RetrievalEnvelope.ok("ret-1", List.of(hit("ret-1:1", "chunk-a", "片段", 1, 1, 2))));
         List<ChatMessageDTO> saved = new ArrayList<>();
         // 本次运行允许的 KB 清单里没有命中来源的 KB（来源已不在获准范围）。
-        run(List.of(
+        RuntimeException error = assertThrows(RuntimeException.class, () -> run(List.of(
                 knowledgeRound("call-k1", envelope),
                 answerRound("call-a1", "回答正文", "[\"ret-1:1\"]")),
-                saved, List.of(kb(OTHER_KB)), envelope);
-
-        assertNull(answerIn(saved).getMetadata().getCitations());
+                saved, List.of(kb(OTHER_KB)), envelope));
+        assertEquals("INVALID_ANSWER_FORMAT", RunLifecycleService.classify(error));
+        assertTrue(saved.stream().noneMatch(message -> message.getRole() == ChatMessageDTO.RoleType.ASSISTANT
+                && message.getContent() != null && !message.getContent().isEmpty()));
     }
 
     @Test
     @DisplayName("a source that was never retrieved in this run cannot be registered")
     void unrequestedRetrievalCannotRegisterASource() throws Exception {
         List<ChatMessageDTO> saved = new ArrayList<>();
-        ScriptedRuntime runtime = run(List.of(answerRound("call-a1", "回答正文", "[\"ret-1:1\"]")),
+        RuntimeException error = assertThrows(RuntimeException.class, () -> run(List.of(answerRound("call-a1", "回答正文", "[\"ret-1:1\"]")),
                 saved, List.of(kb(KB)), envelope(RetrievalEnvelope.ok("ret-1",
-                        List.of(hit("ret-1:1", "chunk-a", "片段", 1, 1, 2)))));
-
-        assertNull(answerIn(saved).getMetadata().getCitations());
-        assertFalse(runtime.registeredCitations(),
-                "a run without a completed retrieval may not register any source");
+                        List.of(hit("ret-1:1", "chunk-a", "片段", 1, 1, 2))))));
+        assertEquals("INVALID_ANSWER_FORMAT", RunLifecycleService.classify(error));
+        assertTrue(saved.isEmpty(), "an unrequested source must not authorize any answer or tool result");
     }
 
     @Test

@@ -227,7 +227,8 @@ class RunTracingExecutionTest {
         assertEquals(20, events.stream().filter(e -> e.type() == RunEventType.TOOL_CALL).count());
         RunEventRecord limit = events.stream().filter(e -> e.type() == RunEventType.STEP_LIMIT).findFirst()
                 .orElseThrow(() -> new AssertionError("no STEP_LIMIT event: " + types()));
-        assertEquals(RunEventStatus.SUCCEEDED, limit.status());
+        assertEquals(RunEventStatus.FAILED, limit.status());
+        assertEquals("NO_ANSWER_PRODUCED", limit.errorCode());
         assertNull(limit.toolCallId(), "a step limit is not a tool call");
     }
 

@@ -17,6 +17,7 @@ import com.kama.jchatmind.model.dto.ChatMessageDTO;
 import com.kama.jchatmind.model.dto.KnowledgeBaseDTO;
 import com.kama.jchatmind.model.entity.Agent;
 import com.kama.jchatmind.model.entity.KnowledgeBase;
+import com.kama.jchatmind.models.ModelRequestGate;
 import com.kama.jchatmind.service.ChatMessageFacadeService;
 import com.kama.jchatmind.service.SseService;
 import com.kama.jchatmind.service.ToolFacadeService;
@@ -27,6 +28,7 @@ import org.springframework.ai.chat.messages.*;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -48,12 +50,10 @@ public class JChatMindFactory {
     private final ToolFacadeService toolFacadeService;
     private final ChatMessageFacadeService chatMessageFacadeService;
     private final ChatMessageConverter chatMessageConverter;
-    // 模型请求节奏闸门：由运行循环在真实发送前分片等待，等待期间可响应取消与租约失效。
-    // 字段注入并允许缺失，避免改动工厂的构造签名（测试与其它装配点保持兼容）。
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private com.kama.jchatmind.models.ModelRequestGate modelRequestGate =
-            com.kama.jchatmind.models.ModelRequestGate.NONE;
+    // Both Spring and the manually assembled public factory must receive the same required gate.
+    private final ModelRequestGate modelRequestGate;
 
+    /** Compatibility for explicit isolated/test assembly; production uses the required-gate constructor. */
     public JChatMindFactory(
             ChatClientRegistry chatClientRegistry,
             SseService sseService,
@@ -65,6 +65,24 @@ public class JChatMindFactory {
             ChatMessageFacadeService chatMessageFacadeService,
             ChatMessageConverter chatMessageConverter
     ) {
+        this(chatClientRegistry, sseService, agentMapper, agentConverter, knowledgeBaseMapper,
+                knowledgeBaseConverter, toolFacadeService, chatMessageFacadeService, chatMessageConverter,
+                ModelRequestGate.NONE);
+    }
+
+    @Autowired
+    public JChatMindFactory(
+            ChatClientRegistry chatClientRegistry,
+            SseService sseService,
+            AgentMapper agentMapper,
+            AgentConverter agentConverter,
+            KnowledgeBaseMapper knowledgeBaseMapper,
+            KnowledgeBaseConverter knowledgeBaseConverter,
+            ToolFacadeService toolFacadeService,
+            ChatMessageFacadeService chatMessageFacadeService,
+            ChatMessageConverter chatMessageConverter,
+            ModelRequestGate modelRequestGate
+    ) {
         this.chatClientRegistry = chatClientRegistry;
         this.sseService = sseService;
         this.agentMapper = agentMapper;
@@ -74,6 +92,7 @@ public class JChatMindFactory {
         this.toolFacadeService = toolFacadeService;
         this.chatMessageFacadeService = chatMessageFacadeService;
         this.chatMessageConverter = chatMessageConverter;
+        this.modelRequestGate = Objects.requireNonNull(modelRequestGate, "Model request gate is required");
     }
 
     private Agent loadAgent(String agentId) {

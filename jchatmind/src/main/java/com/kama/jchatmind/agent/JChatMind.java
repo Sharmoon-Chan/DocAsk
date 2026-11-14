@@ -17,6 +17,9 @@ import com.kama.jchatmind.model.dto.KnowledgeBaseDTO;
 import com.kama.jchatmind.model.response.CreateChatMessageResponse;
 import com.kama.jchatmind.model.vo.ChatMessageVO;
 import com.kama.jchatmind.models.ModelRequestGate;
+import com.kama.jchatmind.models.ModelCallException;
+import com.kama.jchatmind.models.ModelCallFailure;
+import com.kama.jchatmind.models.ModelRetryPolicy;
 import com.kama.jchatmind.models.ProviderFailure;
 import com.kama.jchatmind.service.ChatMessageFacadeService;
 import com.kama.jchatmind.service.SseService;
@@ -44,6 +47,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -68,10 +72,10 @@ public class JChatMind {
     private AgentState agentState;
 
     // 可用的工具
-    private List<ToolCallback> availableTools;
+    private List<ToolCallback> availableTools = List.of();
 
     // 可访问的知识库
-    private List<KnowledgeBaseDTO> availableKbs;
+    private List<KnowledgeBaseDTO> availableKbs = List.of();
 
     // 工具调用管理器
     private ToolCallingManager toolCallingManager;
@@ -161,7 +165,7 @@ public class JChatMind {
                 : availableTools.stream()
                         .map(tool -> (ToolCallback) new TimedToolCallback(tool, toolTimings))
                         .toList();
-        this.availableKbs = availableKbs;
+        this.availableKbs = availableKbs == null ? List.of() : availableKbs;
 
         this.chatSessionId = chatSessionId;
         this.sseService = sseService;
@@ -236,6 +240,7 @@ public class JChatMind {
     // citations 只在「本轮确实产生了面向用户的答复」时非空：内容由服务端从本次运行的来源登记补全，
     // 不是模型文本，也不从历史或客户端 metadata 继承。
     private void saveMessage(Message message, List<AnswerCitation> citations, boolean finalAnswer) {
+        requireNotInterrupted();
         runtimeGuard.run();
         ChatMessageDTO.ChatMessageDTOBuilder builder = ChatMessageDTO.builder();
         if (message instanceof AssistantMessage assistantMessage) {
@@ -334,10 +339,11 @@ public class JChatMind {
     //   - 答复轮：没有工具调用，或只调了控制类工具，此时的 content 才是给用户的答复
     // ⚠️ 实测过「最终答复 + terminate」出现在同一条消息里，所以判据必须是
     //    「有没有真正干活的工具」，而不能简单看成「有没有 tool_calls」。
-    private static final Set<String> CONTROL_TOOLS = Set.of("terminate", "directAnswer", "groundedAnswer");
+    private static final Set<String> CONTROL_TOOLS = Set.of("terminate", "directAnswer", "groundedAnswer", "sourceAnswer");
 
     // 交付最终答复的正式通道（见 DirectAnswerTool）
     private static final String DIRECT_ANSWER_TOOL = "directAnswer";
+    private static final String SOURCE_ANSWER_TOOL = "sourceAnswer";
 
     // 只用于从 toolCalls 的 arguments 里读一个 JSON 字段。
     // ObjectMapper 的读操作是线程安全的，静态持有即可，无需走 Spring 注入。
@@ -349,6 +355,80 @@ public class JChatMind {
 
     // 模型交付的答复请求：answer 是给用户看的正文，citationIds 是它选择引用的来源 id（可选）。
     private record DirectAnswerRequest(String answer, List<String> citationIds) {
+    }
+
+    private record SourceAnswerRequest(List<GroundedAnswerAssembler.Statement> sources, boolean insufficient,
+                                       boolean partial) { }
+
+    private SourceAnswerRequest readSourceAnswer(List<AssistantMessage.ToolCall> calls) {
+        for (AssistantMessage.ToolCall call : calls) {
+            if (!SOURCE_ANSWER_TOOL.equals(call.name())) continue;
+            try {
+                JsonNode node = JSON.readTree(call.arguments());
+                if (node == null || !node.isObject()) throw invalidSourceDelivery();
+                var fields = node.fieldNames();
+                while (fields.hasNext()) {
+                    if (!Set.of("sources", "insufficient", "coverage").contains(fields.next())) throw invalidSourceDelivery();
+                }
+                JsonNode coverage = node.get("coverage");
+                if (coverage != null && (!coverage.isTextual()
+                        || !Set.of("full", "partial").contains(coverage.asText()))) throw invalidSourceDelivery();
+                boolean partial = coverage != null && "partial".equals(coverage.asText());
+                JsonNode insufficient = node.get("insufficient");
+                if (insufficient != null && !insufficient.isNull() && !insufficient.isBoolean()) {
+                    throw invalidSourceDelivery();
+                }
+                boolean noAnswer = insufficient != null && insufficient.isBoolean() && insufficient.booleanValue();
+                JsonNode sources = node.get("sources");
+                if (noAnswer) {
+                    if (sources != null && !sources.isNull() || coverage != null) throw invalidSourceDelivery();
+                    return new SourceAnswerRequest(null, true, false);
+                }
+                if (sources == null || !sources.isArray() || sources.isEmpty() || sources.size() > 3) {
+                    throw invalidSourceDelivery();
+                }
+                List<GroundedAnswerAssembler.Statement> parsed = new ArrayList<>();
+                for (JsonNode source : sources) {
+                    if (!source.isObject() || source.size() != 2 || !source.has("citationId")
+                            || !source.has("evidenceQuote") || !source.get("citationId").isTextual()
+                            || !source.get("evidenceQuote").isTextual()) throw invalidSourceDelivery();
+                    parsed.add(new GroundedAnswerAssembler.Statement(null, source.get("citationId").asText(),
+                            source.get("evidenceQuote").asText()));
+                }
+                return new SourceAnswerRequest(parsed, false, partial);
+            } catch (com.fasterxml.jackson.core.JsonProcessingException invalid) {
+                throw invalidSourceDelivery();
+            }
+        }
+        return null;
+    }
+
+    private static InvalidAnswerFormatException invalidSourceDelivery() {
+        return new InvalidAnswerFormatException("Use sourceAnswer with one to three real sources and optional full/partial coverage, or insufficient:true alone");
+    }
+
+    /** Validate before any response is persisted or any member of the batch executes. */
+    private void validateToolBatch(List<AssistantMessage.ToolCall> calls) {
+        Set<String> exposed = this.availableTools.stream().map(tool -> tool.getToolDefinition().name())
+                .collect(Collectors.toSet());
+        Set<String> ids = new java.util.HashSet<>();
+        int deliveries = 0;
+        for (AssistantMessage.ToolCall call : calls) {
+            if (call == null || call.id() == null || call.id().isBlank() || !ids.add(call.id())
+                    || !exposed.contains(call.name())) {
+                throw new InvalidAnswerFormatException("Only distinct, registered tool calls are allowed");
+            }
+            if (deliveryPolicy() == DeliveryPolicy.SOURCE_EXTRACTIVE
+                    && !Set.of("KnowledgeTool", "getDate", "terminate", SOURCE_ANSWER_TOOL).contains(call.name())) {
+                throw new InvalidAnswerFormatException("Source-only runs cannot execute other tools");
+            }
+            if (Set.of(DIRECT_ANSWER_TOOL, GROUNDED_ANSWER_TOOL, SOURCE_ANSWER_TOOL).contains(call.name())) {
+                deliveries++;
+            }
+        }
+        if (deliveries > 1 || deliveries > 0 && hasRealWorkToolCall(calls)) {
+            throw new InvalidAnswerFormatException("Retrieve or execute first; deliver an answer in a separate round");
+        }
     }
 
 
@@ -396,7 +476,7 @@ public class JChatMind {
     }
     // 从 directAnswer 工具的 arguments 里取出模型交付的答复与它选择的来源 id。
     // 形如 {"answer": "……", "citationIds": ["…"]}；工具没被调用、answer 缺失或解析失败都返回 null。
-    // citationIds 只是「模型的请求」：形状无效时整段忽略，其真实性由 CitationRegistry 校验。
+    // citationIds 是模型请求；显式给出时必须完整通过形状、来源与授权校验。
     private DirectAnswerRequest readDirectAnswer(List<AssistantMessage.ToolCall> toolCalls) {
         for (AssistantMessage.ToolCall call : toolCalls) {
             if (!DIRECT_ANSWER_TOOL.equals(call.name())) {
@@ -405,12 +485,15 @@ public class JChatMind {
             try {
                 JsonNode node = JSON.readTree(call.arguments());
                 JsonNode answer = node == null ? null : node.get("answer");
-                if (answer == null || !StringUtils.hasText(answer.asText())) {
-                    continue;
+                if (node == null || !node.isObject() || answer == null || !answer.isTextual()
+                        || !StringUtils.hasText(answer.asText())) {
+                    throw new InvalidAnswerFormatException("directAnswer must contain a nonempty answer");
                 }
                 return new DirectAnswerRequest(answer.asText(), readCitationIds(node.get("citationIds")));
+            } catch (InvalidAnswerFormatException invalid) {
+                throw invalid;
             } catch (Exception e) {
-                log.warn("解析 directAnswer 参数失败: {}", e.getMessage());
+                throw new InvalidAnswerFormatException("Invalid directAnswer arguments");
             }
         }
         return null;
@@ -442,7 +525,8 @@ public class JChatMind {
      */
     enum DeliveryPolicy {
         LEGACY,
-        GROUNDED_REQUIRED
+        GROUNDED_REQUIRED,
+        SOURCE_EXTRACTIVE
     }
 
     /** 本次运行是否启用了 grounded 协议：看工具是否在本次运行的可用工具列表里。 */
@@ -457,23 +541,27 @@ public class JChatMind {
 
     /** 交付策略只由本次运行实际装上的工具决定，不按正文关键词猜、也不看参数有没有 citationIds。 */
     private DeliveryPolicy deliveryPolicy() {
+        if (this.availableTools.stream().anyMatch(tool -> SOURCE_ANSWER_TOOL.equals(tool.getToolDefinition().name()))) {
+            return DeliveryPolicy.SOURCE_EXTRACTIVE;
+        }
         return groundedEnabled() ? DeliveryPolicy.GROUNDED_REQUIRED : DeliveryPolicy.LEGACY;
     }
 
-    // 只接受字符串数组；其它形状（对象、数字、null、超长列表）一律忽略，留给模型重试的空间由提示词负责。
+    // 省略/null 保留旧非知识答复兼容；显式提供时只接受有界的非空字符串数组。
     private List<String> readCitationIds(JsonNode citationIds) {
         if (citationIds == null || citationIds.isNull()) {
             return List.of();
         }
         if (!citationIds.isArray()) {
-            log.warn("directAnswer 的 citationIds 参数形状无效，本次不生成引用");
-            return List.of();
+            throw new InvalidAnswerFormatException("citationIds must be a string array");
+        }
+        if (citationIds.size() > CitationRegistry.MAX_CITATIONS) {
+            throw new InvalidAnswerFormatException("Too many requested citations");
         }
         List<String> ids = new ArrayList<>();
         for (JsonNode id : citationIds) {
             if (!id.isTextual() || id.asText().isBlank()) {
-                log.warn("directAnswer 的 citationIds 含无效条目，本次不生成引用");
-                return List.of();
+                throw new InvalidAnswerFormatException("citationIds contains an invalid entry");
             }
             ids.add(id.asText());
         }
@@ -481,7 +569,7 @@ public class JChatMind {
     }
 
     // 服务端校验：id 必须属于本次运行已完成的检索，且来源仍在本次运行的获准 KB 范围内。
-    // 校验失败只记录安全的原因码与数量，不生成可点击引用，也不读取任何文档正文。
+    // 显式请求中任何来源无效都会拒绝交付；安全日志不包含原文或未授权内容。
     private CitationRegistry.Resolution resolveCitations(List<String> requestedCitationIds) {
         if (requestedCitationIds == null || requestedCitationIds.isEmpty()) {
             return new CitationRegistry.Resolution(List.of(), List.of(), java.util.Map.of());
@@ -500,6 +588,11 @@ public class JChatMind {
         for (CitationRegistry.Notice notice : resolution.notices()) {
             log.warn("回答引用校验未通过: reason={} count={}", notice.reason(), notice.count());
         }
+        for (int position = 1; position <= requestedCitationIds.size(); position++) {
+            if (!resolution.labelsByRequestIndex().containsKey(position)) {
+                throw new InvalidAnswerFormatException("Every requested citation must be verified");
+            }
+        }
         return resolution;
     }
 
@@ -511,13 +604,19 @@ public class JChatMind {
             "rate limit", "too many requests", "overloaded");
 
     // 上游繁忙时的尝试次数（首次 + 2 次重试）
-    private static final int MODEL_MAX_ATTEMPTS = 3;
+    private static final int MODEL_MAX_ATTEMPTS = ModelRetryPolicy.MAX_ATTEMPTS;
 
     // 本轮 run 是否已经产出过「面向用户的答复」
     private boolean userAnswerProduced;
 
     // 是否已经为「没有答复」补过一轮收尾提醒（只补一次，避免和模型来回拉锯）
     private boolean finalizeReminderSent;
+    private boolean deliveryRepairUsed;
+    private boolean successfulRetrievalAttempt;
+    // Only a completed getDate callback may set this value; never accept a model-generated date.
+    private java.time.LocalDate queriedDate;
+    // Limits when another attempt may start; transport read timeout remains a separate limit.
+    private static final long MODEL_RETRY_WINDOW_NANOS = 20_000_000_000L;
 
     // 本轮 run 的原始用户请求。
     // 必须在 run() 开始时固定下来：收尾提醒是作为 UserMessage 注入 chatMemory 的，
@@ -538,12 +637,23 @@ public class JChatMind {
     // 不把「无限重试」当可用率修复 —— 超过次数就是真实失败，如实记进运行结果。
     private ChatResponse callModelWithRetry(Prompt prompt, String thinkPrompt) {
         RuntimeException lastError = null;
+        long retryWindowStarted = System.nanoTime();
         for (int attempt = 1; attempt <= MODEL_MAX_ATTEMPTS; attempt++) {
+            requireNotInterrupted();
             runtimeGuard.run();
             // 节奏等待放在真实发送之前，并且**等待结束后立刻复查运行状态**：
             // 等待期间可能发生取消、租约失效或权限变化（等待最长可达十几秒）。
-            awaitModelSlot();
+            long remainingRetryNanos = attempt == 1 ? Long.MAX_VALUE
+                    : MODEL_RETRY_WINDOW_NANOS - (System.nanoTime() - retryWindowStarted);
+            if (attempt > 1 && remainingRetryNanos <= 0L) throw lastError;
+            boolean reservedInTime = awaitModelSlot(remainingRetryNanos);
             runtimeGuard.run();
+            requireNotInterrupted();
+            if (!reservedInTime || attempt > 1
+                    && System.nanoTime() - retryWindowStarted >= MODEL_RETRY_WINDOW_NANOS) {
+                // No second model request was made: preserve the actual earlier provider failure.
+                throw lastError;
+            }
             RunRecorder recorder = this.runRecorder;
             long started = System.nanoTime();
             Instant startedAt = Instant.now();
@@ -552,28 +662,37 @@ public class JChatMind {
             ChatResponse response;
             try {
                 response = requestModel(prompt, thinkPrompt);
+                // Some clients return normally even after their caller was interrupted.
+                requireNotInterrupted();
+                if (response == null || response.getResult() == null || response.getResult().getOutput() == null) {
+                    throw new ModelCallException(new ModelCallFailure(ModelCallFailure.Kind.INVALID_RESPONSE,
+                            "EmptyChatResponse", null));
+                }
             } catch (RuntimeException failure) {
-                ProviderFailure diagnostics = ProviderFailure.find(failure);
+                ModelCallFailure diagnostics = ModelCallFailure.classify(failure);
                 if (recorder != null) {
                     // 失败也要留证：detail 里带白名单诊断（状态码/Retry-After/错误码/请求标识），
                     // 缺失字段记 unknown，不猜原因。
                     recorder.modelCall(attempt, startedAt, recorder.elapsedMillis(started),
-                            RunEventStatus.FAILED, "MODEL_CALL_FAILED", modelCallDetail(diagnostics));
+                            RunEventStatus.FAILED, "MODEL_CALL_FAILED", modelFailureDetail(diagnostics));
                 }
-                boolean throttled = diagnostics != null && diagnostics.throttled();
-                if (!throttled || attempt >= MODEL_MAX_ATTEMPTS) {
+                runtimeGuard.run();
+                ModelRetryPolicy.Decision decision = ModelRetryPolicy.afterFailure(diagnostics, attempt);
+                if (!decision.retry() || System.nanoTime() - retryWindowStarted
+                        + decision.delayMillis() * 1_000_000L >= MODEL_RETRY_WINDOW_NANOS) {
                     throw failure;
                 }
-                long waitMs = throttleWaitMillis(diagnostics, attempt);
-                log.warn("模型限流，第 {}/{} 次尝试后等待 {} ms 再试", attempt, MODEL_MAX_ATTEMPTS, waitMs);
-                sleepQuietly(waitMs);
+                log.warn("模型请求暂时失败: kind={} attempt={}/{} retryDelayMs={}",
+                        diagnostics.kind(), attempt, MODEL_MAX_ATTEMPTS, decision.delayMillis());
+                waitBeforeModelRetry(decision.delayMillis());
                 lastError = failure;
                 continue;
             }
             long modelDurationMs = recorder == null ? 0L : recorder.elapsedMillis(started);
 
             String text = response == null ? null : response.getResult().getOutput().getText();
-            boolean busy = isUpstreamBusy(text);
+            // A valid tool decision mentioning "rate limit" is not an upstream busy banner.
+            boolean busy = !response.hasToolCalls() && isUpstreamBusy(text);
             if (recorder != null) {
                 // 真实调用的结果分类：繁忙是“失败尝试”，正常返回是“成功调用”。
                 recorder.modelCall(attempt, startedAt, modelDurationMs,
@@ -592,11 +711,15 @@ public class JChatMind {
                 return response;
             }
 
-            String notice = text.strip();
-            lastError = new IllegalStateException("上游模型繁忙（重试 " + MODEL_MAX_ATTEMPTS + " 次仍失败）: " + notice);
-            log.warn("上游返回繁忙提示（第 {}/{} 次尝试）: {}", attempt, MODEL_MAX_ATTEMPTS, notice);
+            lastError = new ModelCallException(new ModelCallFailure(ModelCallFailure.Kind.RATE_LIMITED,
+                    "BusyTextResponse", null));
+            log.warn("上游返回繁忙提示: attempt={}/{}", attempt, MODEL_MAX_ATTEMPTS);
             if (attempt < MODEL_MAX_ATTEMPTS) {
-                sleepQuietly(attempt * 1000L); // 简单退避：1s、2s
+                long delay = attempt * 1000L;
+                if (System.nanoTime() - retryWindowStarted + delay * 1_000_000L >= MODEL_RETRY_WINDOW_NANOS) {
+                    throw lastError;
+                }
+                waitBeforeModelRetry(delay);
             }
         }
         throw lastError;
@@ -612,16 +735,20 @@ public class JChatMind {
      * <p>线程被中断时**不放行**：恢复中断标记并抛出固定文案的异常，由上层记为运行失败。
      * 之前的实现中断后直接返回并继续调用模型，等于取消不生效。</p>
      */
-    private void awaitModelSlot() {
+    private boolean awaitModelSlot(long maxWaitNanos) {
+        requireNotInterrupted();
         long waitNanos = modelRequestGate.reserveDelayNanos();
+        if (maxWaitNanos != Long.MAX_VALUE && waitNanos >= maxWaitNanos) {
+            return false;
+        }
         if (waitNanos <= 0) {
-            return;
+            return true;
         }
         long deadline = System.nanoTime() + waitNanos;
         while (true) {
             long remaining = deadline - System.nanoTime();
             if (remaining <= 0) {
-                return;
+                return true;
             }
             long slice = Math.min(remaining, MODEL_WAIT_SLICE_NANOS);
             try {
@@ -652,6 +779,13 @@ public class JChatMind {
             return head;
         }
         return head + ";" + (tail.length() > room ? tail.substring(0, room) : tail);
+    }
+
+    private String modelFailureDetail(ModelCallFailure failure) {
+        String head = "call=" + modelCallOrdinal + ";retrieval=" + (retrievalRounds > 0);
+        String tail = failure.toDetail();
+        int room = Math.max(0, 199 - head.length());
+        return head + ";" + tail.substring(0, Math.min(tail.length(), room));
     }
 
     /** 有界退避：优先 Retry-After，其次按次数指数退避，最终不超过上限。 */
@@ -695,11 +829,26 @@ public class JChatMind {
                 .chatResponse();
     }
 
-    private void sleepQuietly(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+    void waitBeforeModelRetry(long millis) {
+        long until = System.nanoTime() + Math.max(0L, millis) * 1_000_000L;
+        do {
+            requireNotInterrupted();
+            runtimeGuard.run();
+            long remaining = until - System.nanoTime();
+            if (remaining <= 0) return;
+            long slice = Math.min(remaining, MODEL_WAIT_SLICE_NANOS);
+            try {
+                Thread.sleep(slice / 1_000_000L, (int) (slice % 1_000_000L));
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("模型重试等待已中断，未发出下一请求");
+            }
+        } while (true);
+    }
+
+    private static void requireNotInterrupted() {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new IllegalStateException("运行线程已中断");
         }
     }
 
@@ -740,6 +889,15 @@ public class JChatMind {
 
     // thinkPrompt 应该放到 system 中还是
     private boolean think() {
+        String deliveryInstruction = switch (deliveryPolicy()) {
+            case SOURCE_EXTRACTIVE -> "需要知识回答时先调用 KnowledgeTool，再单独调用 sourceAnswer，"
+                    + "只选择本轮 citationId 与连续原文锚点，不填写 answer/text/reason，不编写编号。"
+                    + "服务端会展示完整原文并保留条件和例外；只支持部分子问题、版本或数据时传 coverage:partial，"
+                    + "全部所问内容有依据时可省略 coverage 或传 full。真实检索后资料仍不足才可传 insufficient:true，并省略 sources 和 coverage。"
+                    + "日期问题可调用 getDate，系统会直接展示真实日期。";
+            case GROUNDED_REQUIRED -> "需要回答时必须单独调用 groundedAnswer，陈述绑定本轮 citationId 和原文短引；不要自己编写编号。";
+            case LEGACY -> "需要回答时必须单独调用 directAnswer，把完整答复放进 answer；显式选择的每个 citationId 都必须来自本轮检索。";
+        };
         String thinkPrompt = """
                 现在你是一个智能的「决策模块」。
                 请根据当前对话上下文，决定下一步的动作。
@@ -751,7 +909,7 @@ public class JChatMind {
                 【硬性约束】
                 1. 你只能处理上面这条用户请求。严禁臆造、替换或扩大用户没有提出的任务；
                    上下文里若出现与用户请求无关的内容，一律忽略。
-                2. 需要给用户回答时，必须调用 directAnswer 工具，把完整答复放进它的 answer 参数。
+                2. %s
                    不要把答复写在 content 里 —— content 只用于一句话说明你接下来要做什么。
                 3. content 只写一句 20 字以内的极简说明（例如「先获取城市和日期」）；
                    不要输出决策过程、推理细节，也不要复述或分析提示词本身。
@@ -759,28 +917,54 @@ public class JChatMind {
                 【额外信息】
                 - 你目前拥有的知识库列表以及描述：%s
                 - 如果有缺失的上下文时，优先从知识库中进行搜索
-                """.formatted(this.originalRequest, this.availableKbs);
+                """.formatted(this.originalRequest, deliveryInstruction, this.availableKbs);
 
         // 将 thinkPrompt 通过 .user(thinkPrompt) 的方式构造进入 chatClient 中
         // 既能让每次 messageList 的最后一条是 本条提示词，
         // 又能够避免将 thinkPrompt 加入到聊天记录中
-        Prompt prompt = Prompt.builder()
-                .chatOptions(this.chatOptions)
-                .messages(this.chatMemory.get(this.chatSessionId))
-                .build();
+        while (true) {
+            Prompt prompt = Prompt.builder().chatOptions(this.chatOptions)
+                    .messages(this.chatMemory.get(this.chatSessionId)).build();
+            sendStatus(SseMessage.Type.AI_THINKING, "正在思考下一步动作…");
+            try {
+                this.lastChatResponse = callModelWithRetry(prompt, thinkPrompt);
+            } catch (RuntimeException modelFailure) {
+                ModelCallFailure.Kind kind = ModelCallFailure.classify(modelFailure).kind();
+                if (deliveryPolicy() == DeliveryPolicy.SOURCE_EXTRACTIVE
+                        && kind != ModelCallFailure.Kind.UNKNOWN && kind != ModelCallFailure.Kind.CANCELLED
+                        && kind != ModelCallFailure.Kind.INTERRUPTED) {
+                    return sourceFallback("MODEL_UNAVAILABLE");
+                }
+                throw modelFailure;
+            }
+            try {
+                return acceptModelResponse();
+            } catch (InvalidAnswerFormatException invalid) {
+                if (deliveryPolicy() != DeliveryPolicy.SOURCE_EXTRACTIVE) throw invalid;
+                runtimeGuard.run();
+                if (deliveryRepairUsed) return sourceFallback("DELIVERY_INVALID");
+                deliveryRepairUsed = true;
+                if (runRecorder != null) runRecorder.note(RunEventType.DELIVERY_REPAIR,
+                        RunEventStatus.FAILED, "INVALID_SOURCE_DELIVERY", "One correction requested; no answer persisted");
+                this.chatMemory.add(this.chatSessionId, new UserMessage(
+                        "上一份交付没有通过格式或来源校验，尚未展示答案。继续回答原始问题：先实际检索，"
+                        + "再单独调用 sourceAnswer，只传 sources:[{citationId,evidenceQuote}]，最多三项；"
+                        + "只覆盖部分子问题、版本或数据时加 coverage:partial，否则省略或传full；不要传 answer/text/reason 或编号。"
+                        + "问题明确询问跨资源原子、回滚、一致性等保证时，所选原文自身需有跨资源作用范围说明；"
+                        + "缺少这种范围依据应补充关系检索或传partial，不能仅凭各自机制的原文声称full。"
+                        + "已检索且资料不足时只传 insufficient:true，并省略sources和coverage。"));
+            }
+        }
+    }
 
-        // 通知前端：进入思考阶段
-        sendStatus(SseMessage.Type.AI_THINKING, "正在思考下一步动作…");
-
-        this.lastChatResponse = callModelWithRetry(prompt, thinkPrompt);
-
+    private boolean acceptModelResponse() {
         Assert.notNull(lastChatResponse, "Last chat client response cannot be null");
-
         AssistantMessage output = this.lastChatResponse
                 .getResult()
                 .getOutput();
 
-        List<AssistantMessage.ToolCall> toolCalls = output.getToolCalls();
+        List<AssistantMessage.ToolCall> toolCalls = output.getToolCalls() == null ? List.of() : output.getToolCalls();
+        validateToolBatch(toolCalls);
 
         boolean decisionRound = hasRealWorkToolCall(toolCalls);
 
@@ -796,6 +980,25 @@ public class JChatMind {
             // 决策轮：content 是模型的内部独白（「先获取城市和日期」之类），不是给用户看的答复。
             // 落库时清空，避免它留在历史里；也不下发前端。
             toPersist = AssistantMessage.builder().content("").toolCalls(toolCalls).build();
+        } else if (deliveryPolicy() == DeliveryPolicy.SOURCE_EXTRACTIVE) {
+            SourceAnswerRequest source = readSourceAnswer(toolCalls);
+            if (source == null || source.insufficient() && !successfulRetrievalAttempt) throw invalidSourceDelivery();
+            runtimeGuard.run();
+            GroundedAnswerAssembler.Assembled assembled = GroundedAnswerAssembler.assembleExtractive(
+                    source.sources(), source.insufficient() ? "insufficient" : null,
+                    citationRegistry, this::isSourceAuthorized, source.partial());
+            if (!source.insufficient() && !source.partial()) {
+                // Identity/quote/authorization validation must happen before inspecting the actual
+                // selected bodies. Adjacent retrieved chunks cannot lend scope to this delivery.
+                Set<String> renderedIds = assembled.citations().stream().map(AnswerCitation::citationId)
+                        .collect(Collectors.toSet());
+                CrossResourceCoverageGuard.verifyFullCoverage(originalRequest,
+                        citationRegistry.registered().stream().filter(citation -> renderedIds.contains(citation.citationId()))
+                                .map(CitationRegistry.RegisteredCitation::content).toList());
+            }
+            answerText = withQueriedDate(assembled.body());
+            citations = assembled.citations();
+            toPersist = AssistantMessage.builder().content(answerText).toolCalls(toolCalls).build();
         } else if (grounded != null) {
             // grounded-v1：编号、排序、去重、来源卡片全部由服务端生成，模型不写 [n]。
             runtimeGuard.run();
@@ -841,10 +1044,10 @@ public class JChatMind {
         if (StringUtils.hasText(answerText)) {
             // Check both delivery channels before marking success or persisting any answer.
             AnswerFormatGuard.verify(answerText, citations == null ? 0 : citations.size());
-            this.userAnswerProduced = true;
         }
 
         saveMessage(toPersist, citations, StringUtils.hasText(answerText));
+        if (StringUtils.hasText(answerText)) this.userAnswerProduced = true;
         // 最终答复与运行关联：守卫写入器已在同一个事务里写过 answer_message_id；没有守卫时才在这里补写。
         if (StringUtils.hasText(answerText) && this.runRecorder != null && this.lastAssistantMessageId != null
                 && this.guardedPersist == null) {
@@ -864,6 +1067,172 @@ public class JChatMind {
 
         // 如果工具调用不为空，则进入执行阶段
         return !toolCalls.isEmpty();
+    }
+
+    /** Graceful, explicit evidence-only response. It never replays an external action tool. */
+    private boolean sourceFallback(String reason) {
+        requireNotInterrupted();
+        runtimeGuard.run();
+        // A model-selected retrieval may provide useful references. A server read after the
+        // very first model failure has no validated topic/source selection; do not turn the
+        // nearest rows from every public KB into an apparent answer to an unrelated question.
+        boolean hadSelectedSources = !citationRegistry.isEmpty();
+        if (citationRegistry.isEmpty() && !successfulRetrievalAttempt) retrieveForFallback();
+        runtimeGuard.run();
+
+        List<GroundedAnswerAssembler.Statement> sources = hadSelectedSources
+                ? referenceSourcesAcrossRetrievals() : List.of();
+        if (sources.isEmpty() && !successfulRetrievalAttempt) {
+            throw new com.kama.jchatmind.models.ModelException(503, "暂时无法读取知识库，请稍后重试");
+        }
+        GroundedAnswerAssembler.Assembled assembled = sources.isEmpty()
+                ? new GroundedAnswerAssembler.Assembled("请稍后重试，当前没有经过可靠选择的资料答复。",
+                        List.of(), List.of(), false)
+                : GroundedAnswerAssembler.assembleExtractive(sources, null,
+                        citationRegistry, this::isSourceAuthorized);
+        String body = "自动整理暂未完成，本次未能确认你的问题。"
+                + (sources.isEmpty() ? "\n\n" : "以下仅为检索到的原文参考，请核对它是否覆盖你的问题。\n\n")
+                + assembled.body();
+        if (runRecorder != null) runRecorder.note(RunEventType.ANSWER_FALLBACK,
+                RunEventStatus.SUCCEEDED, reason, "Evidence-only delivery; no generated claims");
+        publishServerAnswer(withQueriedDate(body), assembled.citations());
+        agentState = AgentState.FINISHED;
+        return false;
+    }
+
+    /** Keep a compound request's completed retrieval groups represented within the reference budget. */
+    private List<GroundedAnswerAssembler.Statement> referenceSourcesAcrossRetrievals() {
+        var groups = new java.util.LinkedHashMap<Integer, List<CitationRegistry.RegisteredCitation>>();
+        for (CitationRegistry.RegisteredCitation citation : citationRegistry.registered().stream()
+                .sorted(java.util.Comparator.comparingInt(CitationRegistry.RegisteredCitation::retrievalSequence)
+                        .thenComparingInt(CitationRegistry.RegisteredCitation::rank)).toList()) {
+            groups.computeIfAbsent(citation.retrievalSequence(), ignored -> new ArrayList<>()).add(citation);
+        }
+        List<GroundedAnswerAssembler.Statement> sources = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        int largestGroup = groups.values().stream().mapToInt(List::size).max().orElse(0);
+        // One candidate per completed query first, then its next-ranked candidates. This is
+        // budget allocation across real retrievals, not a semantic confidence/answer check.
+        for (int rankPosition = 0; rankPosition < largestGroup; rankPosition++) {
+            for (List<CitationRegistry.RegisteredCitation> group : groups.values()) {
+                if (rankPosition >= group.size()) continue;
+                CitationRegistry.RegisteredCitation citation = group.get(rankPosition);
+                if (!isSourceAuthorized(citation.kbId())) continue;
+                String identity = citation.kbId() + ":" + citation.source().documentId() + ":"
+                        + citation.source().sourceHash() + ":" + citation.source().startLine() + ":" + citation.source().endLine();
+                if (seen.add(identity)) {
+                    sources.add(new GroundedAnswerAssembler.Statement(null, citation.citationId(), citation.content()));
+                }
+                if (sources.size() == GroundedAnswerAssembler.MAX_EXTRACTIVE_SOURCES) return sources;
+            }
+        }
+        return sources;
+    }
+
+    /** Used only when the model failed before retrieving. Every read keeps the normal scoped callback guard. */
+    private void retrieveForFallback() {
+        ToolCallback retrieval = availableTools.stream()
+                .filter(tool -> "KnowledgeTool".equals(tool.getToolDefinition().name())).findFirst().orElse(null);
+        if (retrieval == null) return;
+        for (KnowledgeBaseDTO kb : availableKbs) {
+            if (kb == null || !isSourceAuthorized(kb.getId())) continue;
+            requireNotInterrupted();
+            runtimeGuard.run();
+            String id = "server-retrieval-" + UUID.randomUUID();
+            String arguments;
+            try {
+                arguments = JSON.writeValueAsString(java.util.Map.of("kbsId", kb.getId(), "query", originalRequest));
+            } catch (com.fasterxml.jackson.core.JsonProcessingException impossible) {
+                throw new IllegalStateException("Cannot encode the authorized retrieval request");
+            }
+            saveMessage(AssistantMessage.builder().content("").toolCalls(List.of(
+                    new AssistantMessage.ToolCall(id, "function", "KnowledgeTool", arguments))).build());
+            long started = System.nanoTime();
+            Instant startedAt = Instant.now();
+            String response;
+            try {
+                response = retrieval.call(arguments);
+            } finally {
+                // The callback is timed normally, but no model selected this server fallback call.
+                for (ToolTimingCollector.Sample sample : toolTimings.drain()) {
+                    if (runRecorder != null) runRecorder.toolCall(id, "KnowledgeTool", startedAt,
+                            sample.durationMs(), sample.status(), sample.errorCode());
+                }
+            }
+            runtimeGuard.run();
+            ToolResponseMessage result = ToolResponseMessage.builder().responses(List.of(
+                    new ToolResponseMessage.ToolResponse(id, "KnowledgeTool", response))).build();
+            citationRegistry.registerCompletedCalls(List.of(new CitationRegistry.CompletedCall(id, "KnowledgeTool", response)),
+                    Set.of(id));
+            retrievalRounds++;
+            RetrievalOutcome outcome = readRetrievalOutcome(response);
+            if (outcome != null) {
+                boolean readable = Set.of("OK", "NO_MATCH").contains(outcome.status());
+                successfulRetrievalAttempt |= readable;
+                if (runRecorder != null) runRecorder.retrieval(id, outcome.retrievalId(), outcome.status(), startedAt,
+                        Math.max(0L, (System.nanoTime() - started) / 1_000_000L),
+                        readable ? RunEventStatus.SUCCEEDED : RunEventStatus.FAILED,
+                        readable ? null : "RETRIEVAL_UNAVAILABLE");
+            }
+            saveMessage(result);
+        }
+    }
+
+    private void publishServerAnswer(String body, List<AnswerCitation> citations) {
+        requireNotInterrupted();
+        runtimeGuard.run();
+        AnswerFormatGuard.verify(body, citations.size());
+        saveMessage(AssistantMessage.builder().content(body).toolCalls(List.of()).build(), citations, true);
+        userAnswerProduced = true;
+        if (runRecorder != null && lastAssistantMessageId != null && guardedPersist == null) {
+            runRecorder.answerMessageId(lastAssistantMessageId);
+        }
+        refreshPendingMessages();
+    }
+
+    private boolean deliverDateOnly(ToolResponseMessage message) {
+        if (deliveryPolicy() != DeliveryPolicy.SOURCE_EXTRACTIVE) return false;
+        boolean receivedDate = false;
+        for (ToolResponseMessage.ToolResponse response : message.getResponses()) {
+            if (!"getDate".equals(response.name())) continue;
+            queriedDate = readToolDate(response.responseData());
+            receivedDate = true;
+        }
+        // A date lookup may only be preparation for a compound question, weather query, etc.
+        // The model choosing this tool is not proof that the user's entire request has been answered.
+        if (!receivedDate || !isDateOnlyRequest(originalRequest)) return false;
+        publishServerAnswer("当前日期：" + queriedDate + "。", List.of());
+        agentState = AgentState.FINISHED;
+        return true;
+    }
+
+    private static java.time.LocalDate readToolDate(String responseData) {
+        String value = responseData;
+        try {
+            JsonNode decoded = JSON.readTree(value);
+            if (decoded != null && decoded.isTextual()) value = decoded.asText();
+        } catch (com.fasterxml.jackson.core.JsonProcessingException plainDate) {
+            // Some tool result converters return the String directly rather than JSON-encoding it.
+        }
+        if (value == null || !value.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            throw new InvalidAnswerFormatException("Date tool returned an invalid date");
+        }
+        return java.time.LocalDate.parse(value);
+    }
+
+    /** Conservative whole-request recognition; extra clauses never count as date-only requests. */
+    private static boolean isDateOnlyRequest(String request) {
+        if (request == null) return false;
+        String normalized = request.strip().replaceAll("\\s+", "");
+        return normalized.length() <= 64 && normalized.matches(
+                "(?:请问|请告诉我|请查询|查询)?"
+                        + "(?:(?:今天|今日|现在)(?:是)?几(?:月几)?号"
+                        + "|(?:今天|今日|当前|现在)(?:的)?日期(?:是什么)?"
+                        + "|(?:今天|现在)是什么日期)[？?。！!]*");
+    }
+
+    private String withQueriedDate(String body) {
+        return queriedDate == null ? body : "查询时日期：" + queriedDate + "。\n\n" + body;
     }
 
     // 执行
@@ -908,13 +1277,18 @@ public class JChatMind {
         // 保存工具调用
         saveMessage(toolResponseMessage);
         refreshPendingMessages();
+        if (deliverDateOnly(toolResponseMessage)) return;
 
         // 模型通过 directAnswer / groundedAnswer 交付了答复 → 任务完成，不必再多跑一轮模型调用
         if (toolResponseMessage.getResponses().stream()
                 .anyMatch(resp -> resp.name().equals(DIRECT_ANSWER_TOOL)
-                        || resp.name().equals(GROUNDED_ANSWER_TOOL))) {
-            this.agentState = AgentState.FINISHED;
-            log.info("任务结束（模型通过交付通道给出答复）");
+                        || resp.name().equals(GROUNDED_ANSWER_TOOL) || resp.name().equals(SOURCE_ANSWER_TOOL))) {
+            if (userAnswerProduced) {
+                this.agentState = AgentState.FINISHED;
+                log.info("任务结束（已持久化交付答复）");
+            } else {
+                forceFinalizeRound("交付工具已返回，但尚无已持久化的答复");
+            }
             return;
         }
 
@@ -944,6 +1318,11 @@ public class JChatMind {
                 .map(AssistantMessage.ToolCall::id)
                 .collect(Collectors.toSet());
         int registered = citationRegistry.registerCompletedCalls(completed, requestedKnowledgeCalls);
+        for (ToolResponseMessage.ToolResponse response : toolResponseMessage.getResponses()) {
+            if (!requestedKnowledgeCalls.contains(response.id()) || !"KnowledgeTool".equals(response.name())) continue;
+            RetrievalOutcome outcome = readRetrievalOutcome(response.responseData());
+            if (outcome != null && Set.of("OK", "NO_MATCH").contains(outcome.status())) successfulRetrievalAttempt = true;
+        }
         if (!requestedKnowledgeCalls.isEmpty()) {
             // 只统计「本轮确实向知识库发起过检索」的回合数；成功与否由 registry 另外记。
             retrievalRounds++;
@@ -1044,6 +1423,10 @@ public class JChatMind {
     public AgentState state() {
         return this.agentState;
     }
+
+    public boolean hasDeliveredAnswer() {
+        return this.userAnswerProduced;
+    }
     // 循环即将结束但用户还没拿到任何答复时，注入一条提醒让模型补一轮收尾。
     // 只补一次：第二次仍然失败就置 ERROR，让失败可见，而不是静默结束。
     private void forceFinalizeRound(String reason) {
@@ -1054,8 +1437,13 @@ public class JChatMind {
         }
         log.warn("Agent 即将结束但用户还没拿到答复，注入提醒补一轮收尾。原因：{}", reason);
         this.finalizeReminderSent = true;
+        String tool = switch (deliveryPolicy()) {
+            case SOURCE_EXTRACTIVE -> "sourceAnswer，只选择本轮检索来源与原文锚点；只覆盖部分所问内容时标coverage:partial；尚未检索时先检索";
+            case GROUNDED_REQUIRED -> "groundedAnswer，绑定陈述、来源和原文短引";
+            case LEGACY -> "directAnswer，在 answer 参数中交付答复";
+        };
         this.chatMemory.add(this.chatSessionId, new UserMessage(
-                "注意：你还没有给用户任何答复。请基于已经获得的信息，直接给出一段面向用户的最终答复，不要再调用任何工具。"));
+                "尚未交付答复。请继续处理原始问题，调用 " + tool + "。不要把正文放在 content。"));
     }
 
     // 单个步骤模板
@@ -1083,6 +1471,9 @@ public class JChatMind {
         // 每轮 run 重置运行态
         this.userAnswerProduced = false;
         this.finalizeReminderSent = false;
+        this.deliveryRepairUsed = false;
+        this.successfulRetrievalAttempt = false;
+        this.queriedDate = null;
         // 固定本轮的用户请求：之后可能注入收尾提醒，不能每轮重新取「最近一条 user 消息」
         this.originalRequest = submittedUserInput == null ? latestUserRequest() : submittedUserInput;
 
@@ -1091,18 +1482,21 @@ public class JChatMind {
                  i < MAX_STEPS && agentState != AgentState.FINISHED && agentState != AgentState.ERROR;
                  i++) {
                 step();
-                if (i + 1 >= MAX_STEPS && agentState != AgentState.ERROR) {
-                    agentState = AgentState.FINISHED;
+                if (i + 1 >= MAX_STEPS && agentState != AgentState.FINISHED && agentState != AgentState.ERROR) {
+                    agentState = userAnswerProduced ? AgentState.FINISHED : AgentState.ERROR;
                     log.warn("达到最大步骤数，停止 Agent");
                     if (this.runRecorder != null) {
-                        this.runRecorder.note(RunEventType.STEP_LIMIT, RunEventStatus.SUCCEEDED, null,
+                        this.runRecorder.note(RunEventType.STEP_LIMIT,
+                                userAnswerProduced ? RunEventStatus.SUCCEEDED : RunEventStatus.FAILED,
+                                userAnswerProduced ? null : "NO_ANSWER_PRODUCED",
                                 "MAX_STEPS_" + MAX_STEPS);
                     }
                 }
             }
             // 不要无条件覆盖 ERROR：失败状态要保留下来给上层和前端看
             if (agentState != AgentState.ERROR) {
-                agentState = AgentState.FINISHED;
+                runtimeGuard.run();
+                agentState = userAnswerProduced ? AgentState.FINISHED : AgentState.ERROR;
             }
         } catch (Exception e) {
             agentState = AgentState.ERROR;
@@ -1114,7 +1508,7 @@ public class JChatMind {
             try {
                 sendStatus(SseMessage.Type.AI_DONE,
                         agentState == AgentState.ERROR ? "执行失败" : "完成");
-            } catch (RuntimeException authorizationRevoked) {
+            } catch (com.kama.jchatmind.auth.AuthException authorizationRevoked) {
                 // A revoked session must not receive even a late completion event.
             }
         }

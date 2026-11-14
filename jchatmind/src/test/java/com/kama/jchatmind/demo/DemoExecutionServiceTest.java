@@ -3,6 +3,7 @@ package com.kama.jchatmind.demo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kama.jchatmind.agent.JChatMind;
 import com.kama.jchatmind.agent.JChatMindFactory;
+import com.kama.jchatmind.agent.AgentState;
 import com.kama.jchatmind.agent.tools.DirectAnswerTool;
 import com.kama.jchatmind.agent.tools.DataBaseTools;
 import com.kama.jchatmind.agent.tools.TerminateTool;
@@ -16,8 +17,10 @@ import com.kama.jchatmind.execution.RunOrigin;
 import com.kama.jchatmind.mapper.AgentMapper;
 import com.kama.jchatmind.mapper.KnowledgeBaseMapper;
 import com.kama.jchatmind.model.dto.AgentDTO;
+import com.kama.jchatmind.model.dto.ChatMessageDTO;
 import com.kama.jchatmind.model.entity.Agent;
 import com.kama.jchatmind.model.response.CreateChatMessageResponse;
+import com.kama.jchatmind.models.ModelRequestGate;
 import com.kama.jchatmind.retrieval.RetrievalService;
 import com.kama.jchatmind.runs.RunQueueJob;
 import com.kama.jchatmind.runs.RunQueueRepository;
@@ -30,6 +33,12 @@ import com.kama.jchatmind.service.impl.ToolFacadeServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.model.Generation;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.model.tool.DefaultToolCallingChatOptions;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -37,6 +46,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -94,9 +104,52 @@ class DemoExecutionServiceTest {
     }
 
     private DemoExecutionService newExecution(AgentConverter converter) {
+        return newExecution(converter, ModelRequestGate.NONE);
+    }
+
+    private DemoExecutionService newExecution(AgentConverter converter, ModelRequestGate gate) {
         return new DemoExecutionService(clients, sse, agents, converter, knowledgeBases, knowledgeConverter,
                 messages, messageConverter, new DateTool(), new TerminateTool(), new DirectAnswerTool(), rag,
-                access, submissions, jobs);
+                access, submissions, jobs, gate);
+    }
+
+    @Test
+    void everyPublicRuntimeReservesTheInjectedGateBeforeCallingTheModel() {
+        AtomicInteger reservations = new AtomicInteger();
+        AtomicInteger modelCalls = new AtomicInteger();
+        AtomicInteger persisted = new AtomicInteger();
+        ModelRequestGate gate = () -> { reservations.incrementAndGet(); return 0L; };
+        ChatModel model = mock(ChatModel.class);
+        when(model.getDefaultOptions()).thenReturn(DefaultToolCallingChatOptions.builder()
+                .internalToolExecutionEnabled(false).build());
+        when(model.call(any(Prompt.class))).thenAnswer(invocation -> {
+            int request = modelCalls.incrementAndGet();
+            assertEquals(request, reservations.get(), "the public model must be called only after reserving its gate");
+            return new ChatResponse(List.of(new Generation(AssistantMessage.builder().content("")
+                    .toolCalls(List.of(new AssistantMessage.ToolCall("date-" + request, "function", "getDate", "{}")))
+                    .build())));
+        });
+        ChatClient realClient = ChatClient.create(model);
+        when(clients.get("deepseek-chat")).thenReturn(realClient);
+        when(messages.getChatMessagesBySessionIdRecently(anyString(), eq(10))).thenAnswer(invocation -> List.of(
+                ChatMessageDTO.builder().id("question").sessionId(invocation.getArgument(0))
+                        .role(ChatMessageDTO.RoleType.USER).content("今天几号").build()));
+        when(messages.createChatMessage(any(ChatMessageDTO.class))).thenAnswer(invocation ->
+                CreateChatMessageResponse.builder().chatMessageId("public-answer-" + persisted.incrementAndGet()).build());
+        DemoExecutionService gated = newExecution(agentConverter, gate);
+
+        JChatMind first = gated.runtime(AGENT, "public-session-one", access::validateAgent);
+        first.run();
+        JChatMind second = gated.runtime(AGENT, "public-session-two", access::validateAgent);
+        second.run();
+
+        assertEquals(2, modelCalls.get());
+        assertEquals(2, reservations.get(), "separate public runtimes must retain the explicitly injected shared gate");
+        assertEquals(AgentState.FINISHED, first.state());
+        assertEquals(AgentState.FINISHED, second.state());
+        assertTrue(first.hasDeliveredAnswer());
+        assertTrue(second.hasDeliveredAnswer());
+        verifyNoInteractions(rag);
     }
 
     @Test

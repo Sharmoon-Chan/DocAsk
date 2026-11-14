@@ -27,7 +27,11 @@ import java.util.function.Predicate;
 final class GroundedAnswerAssembler {
 
     static final String PROTOCOL_VERSION = "grounded-v1";
+    static final String EXTRACTIVE_PROTOCOL_VERSION = "grounded-extractive-v2";
     static final String INSUFFICIENT_PREFIX = "本次可用资料不足以确认。";
+    static final String EXTRACTIVE_PREFIX = "以下为本轮检索到的资料原文：";
+    static final String PARTIAL_PREFIX = "本次资料只能支持问题的一部分，未覆盖的内容无法确认。";
+    static final int MAX_EXTRACTIVE_SOURCES = 3;
 
     /** 模型交付的一条陈述：一句话 + 一个来源 ID + 一段原文短引。 */
     record Statement(String text, String citationId, String evidenceQuote) {
@@ -39,6 +43,87 @@ final class GroundedAnswerAssembler {
     }
 
     private GroundedAnswerAssembler() {
+    }
+
+    /**
+     * 确定性的资料原文交付。模型只选择来源与原文锚点，服务端显示该来源的完整片段。
+     *
+     * <p>与 {@link #assemble} 不同，本方法绝不把模型的 {@code text} 当成可验证结论。
+     * 即使模型删去否定、适用条件或把另一段的事实配到这个 ID，输出仍来自本轮登记的完整原文；
+     * 短引仅核对选择的是哪一个片段，不声称它能证明任意改写。片段是否完整回答了用户的问题，
+     * 仍是检索与选择的能力边界，因此正文明确标为「资料原文」。</p>
+     *
+     * <p>资料不足分支只接受 statements 缺省（null），并只返回固定服务端文案。
+     * 任意模型 reason 都不进入用户正文，避免以资料不足为名附带无法核对的结论。</p>
+     */
+    static Assembled assembleExtractive(List<Statement> statements, String insufficient, CitationRegistry registry,
+                                        Predicate<String> isSourceAuthorized) {
+        return assembleExtractive(statements, insufficient, registry, isSourceAuthorized, false);
+    }
+
+    static Assembled assembleExtractive(List<Statement> statements, String insufficient, CitationRegistry registry,
+                                        Predicate<String> isSourceAuthorized, boolean partial) {
+        if (insufficient != null && !insufficient.isBlank()) {
+            if (statements != null || partial) {
+                throw new InvalidAnswerFormatException("Evidence answer must choose sources or insufficient, not both");
+            }
+            return new Assembled(INSUFFICIENT_PREFIX, List.of(), List.of(), true);
+        }
+        if (statements == null || statements.isEmpty()) {
+            throw new InvalidAnswerFormatException("Evidence answer must select at least one retrieved source");
+        }
+        // 限制输入条数，而不只限制去重后的数量；重复同一个 ID 也不能绕过成本上限。
+        if (statements.size() > MAX_EXTRACTIVE_SOURCES) {
+            throw new InvalidAnswerFormatException("Evidence answer may select at most three sources");
+        }
+        if (registry == null || isSourceAuthorized == null) {
+            throw new InvalidAnswerFormatException("Evidence answer requires a current authorized source registry");
+        }
+
+        List<String> orderedIds = new ArrayList<>();
+        for (Statement statement : statements) {
+            if (statement == null || registered(registry, statement.citationId()) == null) {
+                throw new InvalidAnswerFormatException("Model answer references a source that could not be verified");
+            }
+            if (!orderedIds.contains(statement.citationId())) {
+                orderedIds.add(statement.citationId());
+            }
+        }
+
+        CitationRegistry.Resolution resolution = registry.resolve(orderedIds, isSourceAuthorized);
+        // 授权先于短引检查和正文渲染。来源被撤销时，不能留下任何部分答案。
+        for (int position = 1; position <= orderedIds.size(); position++) {
+            if (!resolution.labelsByRequestIndex().containsKey(position)) {
+                throw new InvalidAnswerFormatException("Model answer references a source that could not be verified");
+            }
+        }
+        if (resolution.citations().isEmpty() || resolution.citations().size() > MAX_EXTRACTIVE_SOURCES) {
+            throw new InvalidAnswerFormatException("Model answer references a source that could not be verified");
+        }
+        for (Statement statement : statements) {
+            CitationRegistry.RegisteredCitation source = registered(registry, statement.citationId());
+            String anchor = normalize(statement.evidenceQuote());
+            if (anchor.isEmpty() || !normalize(source.content()).contains(anchor)) {
+                throw new InvalidAnswerFormatException("Model answer quotes text that is not in the retrieved source");
+            }
+        }
+
+        StringBuilder body = new StringBuilder(partial ? PARTIAL_PREFIX + "\n\n" + EXTRACTIVE_PREFIX : EXTRACTIVE_PREFIX);
+        // resolve 产生的卡片已经按服务端来源顺序编号、按同一来源范围去重。
+        // 正文与卡片读取同一个 ID，不通过模型维护的数组位置重建映射。
+        for (AnswerCitation citation : resolution.citations()) {
+            CitationRegistry.RegisteredCitation source = registered(registry, citation.citationId());
+            String heading = String.join(" › ", source.source().headingPath());
+            if (heading.isBlank()) {
+                heading = source.source().documentName();
+            }
+            body.append("\n\n**资料原文 [").append(citation.label()).append(']');
+            if (heading != null && !heading.isBlank()) {
+                body.append(" · ").append(GroundedSourceRenderer.heading(heading));
+            }
+            body.append("**\n\n").append(GroundedSourceRenderer.quote(source.content()));
+        }
+        return new Assembled(body.toString(), resolution.citations(), resolution.notices(), false);
     }
 
     static Assembled assemble(List<Statement> statements, String insufficient, CitationRegistry registry,

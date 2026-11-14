@@ -87,7 +87,7 @@ public class DemoCatalogService {
         return List.of(
                 new PublicTool("KnowledgeTool", "检索公开演示知识库，回答时说明资料来源。", ToolType.FIXED),
                 new PublicTool("getDate", "读取服务器当前日期，适合测试真实工具调用。", ToolType.FIXED),
-                new PublicTool("directAnswer", "将最终答复交付到对话中。", ToolType.FIXED),
+                new PublicTool("sourceAnswer", "展示本轮检索到的完整资料原文与来源编号。", ToolType.FIXED),
                 new PublicTool("terminate", "在任务完成后结束本轮执行。", ToolType.FIXED));
     }
 
@@ -131,7 +131,7 @@ public class DemoCatalogService {
                     .citations(publicCitations(message.getMetadata().getCitations())).build();
         } else if (message.getRole() == ChatMessageDTO.RoleType.TOOL) {
             var response = message.getMetadata() == null ? null : message.getMetadata().getToolResponse();
-            if (response == null || response.name() == null || !DemoAccessPolicy.PUBLIC_TOOL_NAMES.contains(response.name())
+            if (response == null || response.name() == null || !DemoAccessPolicy.READABLE_TOOL_NAMES.contains(response.name())
                     || !approvedCalls.contains(response.id() + ":" + response.name())) throw missing();
             metadata = ChatMessageDTO.MetaData.builder().toolResponse(response).build();
         }
@@ -170,7 +170,7 @@ public class DemoCatalogService {
     }
 
     private boolean publicCall(AssistantMessage.ToolCall call) {
-        if (call == null || call.name() == null || !DemoAccessPolicy.PUBLIC_TOOL_NAMES.contains(call.name())) return false;
+        if (call == null || call.name() == null || !DemoAccessPolicy.READABLE_TOOL_NAMES.contains(call.name())) return false;
         if (!"KnowledgeTool".equals(call.name())) return true;
         try {
             JsonNode args = json.readTree(call.arguments());

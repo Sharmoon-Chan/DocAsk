@@ -10,7 +10,9 @@ import java.util.UUID;
 /** Explicit publication is the only way a resource becomes visible to anonymous visitors. */
 @Component
 public class DemoAccessPolicy {
-    static final Set<String> PUBLIC_TOOL_NAMES = Set.of("KnowledgeTool", "getDate", "directAnswer", "terminate");
+    static final Set<String> PUBLIC_TOOL_NAMES = Set.of("KnowledgeTool", "getDate", "sourceAnswer", "terminate");
+    // Historical directAnswer calls may be read, but must not be offered to new public runs.
+    static final Set<String> READABLE_TOOL_NAMES = Set.of("KnowledgeTool", "getDate", "directAnswer", "sourceAnswer", "terminate");
     private final DemoProperties properties;
 
     public DemoAccessPolicy(DemoProperties properties) { this.properties = properties; }
