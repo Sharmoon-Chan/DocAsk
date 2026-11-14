@@ -7,6 +7,17 @@
 - 共享契约（来源哈希/行号/indexVersion 语义）：[docs/development/contracts.md](../docs/development/contracts.md) 第 2、3 节
 - 交付报告：[docs/development/deliveries/02.md](../docs/development/deliveries/02.md)
 
+**结果一览**（50 题冻结集：40 题有答案、10 题资料不足；语料 4 份文档；同一 `BAAI/bge-m3`，`topK = 3`）
+
+| 命中口径 | 检索策略 | Hit@1 | Hit@3 | MRR@3 |
+| --- | --- | --- | --- | --- |
+| `frozen-v1`（第 3 节） | `legacy-title-v1`：只对章节标题建向量 | 0.650 | 0.850 | 0.738 |
+| `frozen-v1`（第 3 节） | `body-v1`：正文切块 | 0.525 | 0.600 | 0.562 |
+| `body-window-v2`（第 3.1 节） | `legacy-title-v1`：只对章节标题建向量 | 0.650 | 0.850 | 0.738 |
+| `body-window-v2`（第 3.1 节） | `body-v1`：正文切块 | 0.875 | 1.000 | 0.933 |
+
+两种口径用的是同一批逐题检索结果，差别只在命中判据。两组数字要一起读，读法见第 7.2 节。
+
 ## 1. 目录与职责
 
 | 路径 | 内容 |
@@ -16,17 +27,22 @@
 | `corpus/v1-2026-10-14/synthetic/eval-only-java-notes.md` | 评测专用合成文档（`synthetic-eval-only`，不得上传产品知识库） |
 | `datasets/questions-v1.jsonl` | 50 题（40 有答案 / 10 资料不足），含 gold 证据单元与期望事实 |
 | `datasets/freeze.json` | 冻结记录：题集与保留测试集哈希（调参前固定） |
+| `datasets/criteria-v2.json` | 命中口径 v2 的冻结记录：判据定义、适用的题集与语料哈希、两次基线运行的结果指纹（第 3.1 节） |
 | `scripts/exo_common.py` | 路径、哈希、JSON(L)、分位数等工具 |
 | `scripts/exo_corpus.py` | manifest 校验、语料快照、分节规则 |
 | `scripts/exo_dataset.py` | 题集结构/证据/split 校验 |
 | `scripts/exo_scoring.py` | 命中判据与指标（纯函数，离线可测） |
+| `scripts/exo_criteria.py` | 命中口径 v2（`body-window-v2`）的判据实现；`frozen-v1` 仍在 `exo_scoring.py` |
 | `scripts/exo_runtime.py` | Embedding HTTP 客户端、psql 桥、检索策略适配器 |
 | `scripts/validate.py` | 命令行校验器（题集 + 语料 + 冻结哈希） |
 | `scripts/run.py` | 真实运行器：建索引、逐题检索、输出结果与 run manifest |
 | `scripts/compare.py` | 同条件两次运行的对比报告 |
 | `scripts/diagnose_boundaries.py` | 命中差距的边界归因诊断（只读；不改变冻结指标） |
+| `scripts/rescore.py` | 按口径 v2 重算已有运行（只读 `results.jsonl`，不调用 Embedding、不访问数据库） |
 | `runs/legacy-title-v1/` | 真实基线结果（逐题 JSONL、失败、请求、SQL、run manifest） |
 | `runs/body-v1/` | 真实候选结果（同一题集与模型；含 `comparison.md`、`chunks.csv`、`index-snapshot.json`、`boundary-diagnostic.json`） |
+| `runs/<运行>/summary.body-window-v2.json` | 该运行按口径 v2 的汇总；`summary.json` 仍是 `frozen-v1` |
+| `runs/body-window-v2-report.md` / `.json` | 两种口径并列的报告，逐条列出判定不同的证据单元 |
 | `tests/` | 离线 pytest（失败路径与已知排名夹具），不访问网络与数据库 |
 
 ## 2. 语料与来源许可
@@ -49,6 +65,26 @@
 证据单元角色：`required`（参与 Hit/Recall/MRR）、`distractor`（相近但错误的干扰，单独统计）、`insufficiency`（资料不足题里说明边界的语句，不参与命中率）。
 
 题集里的证据用 `docKey + sourceHash + startLine/endLine + facts` 标注（**不使用会随重新分块变化的 chunk UUID**）；同一个语义问题组内的多个问题共用同一证据签名；不同 `groupId` 不允许出现完全相同的必填证据签名（防止同义改写被拆到不同组/不同 split）。
+
+## 3.1 命中判据 v2（`body-window-v2`，2026-11-10 冻结）
+
+第 3 节的判据（下称 `frozen-v1`）要求单个片段的行范围**完整包含**证据单元。44 个 required 单元里有 17 个以章节标题行开头，而 `body-v1` 的片段从正文第一行开始，标题进入元数据 `headingPath` 和向量输入。这 17 个单元在 `frozen-v1` 下结构性不可命中（第 7.1 节）。`body-window-v2` 只改这一条，其余与 `frozen-v1` 相同。
+
+一条 hit 覆盖证据单元 `E`，当且仅当：
+
+1. `hit.docKey == E.docKey`，且两侧 `sourceHash` 都存在时相等；
+2. hit 的行范围完全包含 `E` 的**正文窗口**：`E` 行范围内第一行到最后一行的非空、非标题行。`E` 内没有正文行时要求整段包含；
+3. `E.facts` 的每条事实字符串（空白折叠后）都出现在 hit 的 `payload` 里；
+4. `E` 行范围内的每个标题行，要么落在 hit 的行范围内，要么标题文本（去掉全部空白后）出现在 `hit.headingPath` 里；
+5. hit 缺少 `startLine/endLine` 或 `payload` 时不计命中。
+
+约束与边界：
+
+- **`frozen-v1` 判为覆盖的 hit，在 v2 下一定仍然覆盖**：整段包含同时满足第 2、4 条。v2 没有放宽文档、来源哈希、事实字符串这三项。`tests/test_criteria_v2.py` 在夹具和两次真实运行上都断言了这一点。
+- **两种口径并存**。`frozen-v1` 的 `summary.json`、`comparison.md` 不改不删；v2 的结果写在各运行目录的 `summary.body-window-v2.json` 和 `runs/body-window-v2-report.md`。
+- **这是事后口径**：它在 `body-v1` 的 `frozen-v1` 结果出来之后才提出（2026-10-18，[交付报告](../docs/development/deliveries/02.md)第 12.5 节），不是预先登记的。对外报 v2 的数字时，要同时给出 `frozen-v1` 的数字。
+- **冻结记录** `datasets/criteria-v2.json` 固定判据定义、题集与 dev/test 哈希、语料 manifest 哈希，以及两次基线运行的 `runId` 和逐题结果指纹。记录与当前文件不一致时 `rescore.py` 拒绝运行，已有记录不会被覆盖。之后新增的检索策略都按这份记录计分；再改判据需要新的口径 id 和新的记录。
+- 标题行按 `exo_corpus.split_sections` 的规则识别：ATX 标题，围栏代码块里的 `#` 行不算。带闭合 `#` 的标题（`## 标题 ##`）可能和产品写入 `headingPath` 的文本对不上，会被判为未覆盖；冻结语料里没有这种写法。
 
 ## 4. 指标口径
 
@@ -118,7 +154,14 @@ D:\Soft\Python\Anaconda5.3.0\python.exe evaluation/scripts/compare.py `
 # 7) 归因诊断（只读；把命中差距拆成边界差异与真实检索缺口）
 D:\Soft\Python\Anaconda5.3.0\python.exe evaluation/scripts/diagnose_boundaries.py `
   --out evaluation/runs/body-v1/boundary-diagnostic.json
+
+# 8) 按口径 v2 重算（只读 results.jsonl；不需要密钥、Embedding 或数据库）
+#    口径记录 datasets/criteria-v2.json 已存在：与当前题集、语料、判据定义或基线结果不一致时退出码 2
+D:\Soft\Python\Anaconda5.3.0\python.exe evaluation/scripts/rescore.py `
+  --run evaluation/runs/legacy-title-v1 --run evaluation/runs/body-v1
 ```
+
+第 8 步的输出是确定的：同一批输入重跑，`summary.body-window-v2.json` 与 `runs/body-window-v2-report.*` 逐字节相同（Python 3.7 与 3.11 下都核对过）。`--emit-criteria-freeze --frozen-at <日期>` 只在口径记录不存在时写入，用于将来冻结新的口径 id；已有记录不会被覆盖。新增检索策略时，先用第 4 或第 5 步产出该策略的 `results.jsonl`，再把它的目录加到第 8 步的 `--run` 里。
 
 说明与注意：
 
@@ -158,6 +201,7 @@ D:\Soft\Python\Anaconda5.3.0\python.exe evaluation/scripts/diagnose_boundaries.p
 | test（17 题） | — | 0.353 | 0.353 | 0.353 |
 
   干扰片段命中率@3 = 0.286（基线 0.857）；无答案检索拒绝率仍为 0.000；检索延迟 p50 = 5182 ms、p95 = 5343 ms。
+  **0.286 同样是 `frozen-v1` 的边界产物，不能读成「正文切块更少返回干扰资料」**：7 个干扰单元里有 5 个也以标题行开头。同口径数字见第 7.2 节。
 - **必须一起读的归因**（`scripts/diagnose_boundaries.py` → `runs/body-v1/boundary-diagnostic.json`）：
   44 个 required 单元里，body-v1 冻结口径覆盖 26 个，其中 **17 个是「boundary-only」**——片段覆盖了
   去掉首尾标题/空行后的正文窗口、事实字符串也都在 payload 里，只差把标题行算进行范围；
@@ -167,6 +211,38 @@ D:\Soft\Python\Anaconda5.3.0\python.exe evaluation/scripts/diagnose_boundaries.p
 - 因此：**当前冻结判据下 body-v1 的 Hit/Recall/MRR 低于基线，但差距几乎全部来自判据与切块边界的
   结构性冲突**，不是检索质量下降。判据本身**未修改**；若要正式改变口径，必须重新冻结题集
   （`freeze.json`）并重跑两侧，见 `docs/development/deliveries/02.md` 第 12 节。
+  2026-11-10 已按这条要求另行冻结口径 v2，结果见第 7.2 节。
+
+## 7.2 两种口径并列的结果（`body-window-v2`，2026-11-10）
+
+`rescore.py` 用第 7、7.1 节两次真实运行的 `results.jsonl` 原样重新计分，没有重新调用 Embedding 或数据库。
+题集、语料和 `freeze.json` 都没有改动；两侧的输入完全相同，差别只在命中判据。完整报告见
+[`runs/body-window-v2-report.md`](runs/body-window-v2-report.md)，其中逐条列出了两种口径判定不同的证据单元。
+
+| 范围 | 指标 | 标题向量 / `frozen-v1` | 标题向量 / v2 | 正文切块 / `frozen-v1` | 正文切块 / v2 |
+| --- | --- | --- | --- | --- | --- |
+| 全部（40 题） | Hit@1 | 0.650 | 0.650 | 0.525 | **0.875** |
+| 全部（40 题） | Hit@3 | 0.850 | 0.850 | 0.600 | **1.000** |
+| 全部（40 题） | Recall@3 | 0.812 | 0.812 | 0.588 | **0.988** |
+| 全部（40 题） | MRR@3 | 0.738 | 0.738 | 0.562 | **0.933** |
+| 全部（40 题） | 证据单元覆盖@3 | 34/44 | 34/44 | 26/44 | 43/44 |
+| dev（23 题） | Hit@1 / Hit@3 / MRR@3 | 0.565 / 0.826 / 0.674 | 同左 | 0.652 / 0.783 / 0.717 | 0.826 / 1.000 / 0.906 |
+| test（17 题） | Hit@1 / Hit@3 / MRR@3 | 0.765 / 0.882 / 0.824 | 同左 | 0.353 / 0.353 / 0.353 | 0.941 / 1.000 / 0.971 |
+| 带干扰单元的 7 题 | 干扰片段命中率@1 / @3 | 0.286 / 0.857 | 同左 | 0.000 / 0.286 | 0.286 / 1.000 |
+| 无答案 10 题 | 检索级拒绝率 | 0.000 | 0.000 | 0.000 | 0.000 |
+
+怎么读：
+
+1. **同口径下，正文切块比标题向量好**：Hit@1 0.650 → 0.875，Hit@3 0.850 → 1.000，MRR@3 0.738 → 0.933；dev 与保留测试集方向一致。
+2. **标题向量的数字在两种口径下逐项相同**。它的片段行范围本来就含标题行，v2 没有给它加分，也没有扣分。
+3. **`frozen-v1` 下的下降来自判据**：两种口径判定不同的 required 单元正好是那 17 个以标题行开头的单元，没有别的。
+4. **还剩 1 个真实检索缺口**：q022（跨文档题）需要的 `exobrain-overview` 第 25 行没有进入前 3；该题另一份文档的证据排在第 1，所以题目级仍算命中。
+5. **正文切块并没有更少返回干扰资料**。同口径下，带干扰单元的 7 题里干扰单元进入前 3 的有 7 题，标题向量是 6 题；排在第 1 的两侧都是 2 题。此前「0.286 对 0.857、干扰明显减少」的说法是 `frozen-v1` 的边界产物，以本节为准。
+6. **排第 1 的还差 5 题**（q006、q013、q016、q023、q032），其中 q016、q032 的第 1 名是合成干扰文档。
+7. **无答案题在检索阶段仍然一题都不拒**：没有阈值，10 题都返回 3 个片段。正文切块下第 1 名的 L2 距离，有答案题是 0.596–0.968，无答案题是 0.907–1.069，区间重叠。
+8. **这套题对「召回」已经到顶**。Hit@3 = 1.000 之后，它分不出更好的召回策略；还能看出差别的只有排序（上面 5 题）和拒答（10 题）。要评估混合检索这类召回侧的改动，需要先补更难的题或更大的语料，并重新冻结。
+
+局限见第 8 节：v2 是事后口径，样本量小，只测检索不测回答。
 
 ## 8. 已知局限
 
@@ -178,11 +254,14 @@ D:\Soft\Python\Anaconda5.3.0\python.exe evaluation/scripts/diagnose_boundaries.p
 6. **单模型单库单机**：只测 `BAAI/bge-m3`(1024) 与 pgvector 0.8.7 / PostgreSQL 17；换模型/距离算子/索引类型都必须重建索引并重新基线。
 7. **题集由作者人工标注**：`insufficient-info` 的期望值是「资料未提供」，`expectedFacts` 不参与自动评分；检索级拒绝不能用它替代回答级拒绝。
 8. **未测场景**：权限越界、真实超时/限流、索引发布失败与回滚由 03/04/06/07 的任务负责，本目录的故障处理只在离线夹具里覆盖（`UNAVAILABLE` 不计入拒绝）。
-9. **判据按「章节整段」设计，对细切块不利**：第 3 节要求单个 hit 完整包含 gold 行范围，而 gold 单元的 `startLine` 常是章节标题行。03 的正文切块把标题行排除在 chunk 之外（标题进 `headingPath`），因此这类单元在 body-v1 下结构性不可命中；第 7.1 节的 boundary-only 统计给出了量化。**判据未修改**，对外报 body-v1 数字时必须同时说明这一点。
+9. **判据按「章节整段」设计，对细切块不利**：第 3 节要求单个 hit 完整包含 gold 行范围，而 gold 单元的 `startLine` 常是章节标题行。03 的正文切块把标题行排除在 chunk 之外（标题进 `headingPath`），因此这类单元在 body-v1 下结构性不可命中；第 7.1 节的 boundary-only 统计给出了量化。**判据未修改**，对外报 body-v1 数字时必须同时说明这一点。口径 v2（第 3.1 节）是按这条限制另行冻结的并列口径。
 10. **`runs/body-v1/sections.json` 不是候选的切块表**：它仍是冻结语料的章节表（供 legacy 建索引用）；body-v1 的真实切块看 `runs/body-v1/chunks.csv` 与 `index-snapshot.json`。
+11. **口径 v2 是事后口径**：它在看到 `frozen-v1` 的结果之后才定，不是预先登记的；它只放宽「标题行必须在片段行范围内」一条，对两侧使用同一判据，冻结后不再调整。v2 的数字不能单独引用，必须和 `frozen-v1` 的数字一起给出。
+12. **Hit@3 = 1.000 说明的是题集到顶，不是检索没有问题**：语料只有 4 份文档、23 个片段，每题取前 3 个片段。这套题还能区分的只有排序和拒答；规模变大以后的召回效果，它测不出来。
 
 ## 9. 给其它任务的接口
 
 - **03（正文索引与结构化检索）**：用 `datasets/questions-v1.jsonl` 的 dev 集（30 题）调参，test 集（20 题）只在最终比较时用一次；用 `freeze.json` 保证同一题集；用 `runs/legacy-title-v1/summary.json` 的 `distanceSeparation` 校准阈值；命中判据与来源字段语义见第 3 节与 `contracts.md` 第 2、3 节。`body-v1` 适配器（`scripts/exo_runtime.py`）已按真实产品实现校准：只读、按 `active_revision_id` 过滤、用 `documentName` 映射 `docKey`；**产品元数据需要 `indexVersion/documentName/sourceHash/startLine/endLine/headingPath`**，缺任何一个都只能降级为“不可评分”，不会伪装成命中。查询不到索引时返回 `UNAVAILABLE / INDEX_NOT_FOUND`，不会伪装成 `NO_MATCH`。
 - **04（可核验引用）**：`payload` 是交给模型的正文，`headingPath/startLine/endLine/sourceHash` 是引用定位所需字段；`tests/test_scoring_known_rankings.py` 的 `hit_covers_unit` 夹具可用于检查「引用位置是否真的覆盖事实」。
 - **08（CI 与工程文档）**：`validate.py`（离线、退出码 2/3）与 `pytest evaluation/tests` 可直接进 CI；真实运行需要密钥，CI 只跑离线部分。
+- **后续的检索策略（重排、混合检索等）**：产出自己的 `runs/<策略>/results.jsonl` 后，用 `rescore.py --run` 与两条基线并列计分；`tests/test_criteria_v2.py` 固定了口径记录、两条基线的结果指纹和本文公开的数字，任何一项漂移都会在离线测试里失败。

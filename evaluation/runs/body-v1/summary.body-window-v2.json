@@ -1,0 +1,340 @@
+{
+  "schemaVersion": 1,
+  "kValues": [
+    1,
+    3
+  ],
+  "questionCount": 50,
+  "answerableQuestions": 40,
+  "unanswerableQuestions": 10,
+  "metricsAll": {
+    "k=1": {
+      "questions": 40,
+      "hitAt": 0.875,
+      "recallAt": 0.8375,
+      "mrrAt": 0.875,
+      "goldUnits": 44,
+      "goldUnitsCovered": 35,
+      "microRecall": 0.795455,
+      "crossDocumentCoverageAt": 0.8375,
+      "allRequiredDocumentsCoveredRateAt": 0.8,
+      "crossDocumentQuestions": 40,
+      "distractorTopkRate": 0.285714,
+      "distractorQuestions": 7
+    },
+    "k=3": {
+      "questions": 40,
+      "hitAt": 1.0,
+      "recallAt": 0.9875,
+      "mrrAt": 0.933333,
+      "goldUnits": 44,
+      "goldUnitsCovered": 43,
+      "microRecall": 0.977273,
+      "crossDocumentCoverageAt": 0.9875,
+      "allRequiredDocumentsCoveredRateAt": 0.975,
+      "crossDocumentQuestions": 40,
+      "distractorTopkRate": 1.0,
+      "distractorQuestions": 7
+    }
+  },
+  "metricsDev": {
+    "k=1": {
+      "questions": 23,
+      "hitAt": 0.826087,
+      "recallAt": 0.804348,
+      "mrrAt": 0.826087,
+      "goldUnits": 25,
+      "goldUnitsCovered": 19,
+      "microRecall": 0.76,
+      "crossDocumentCoverageAt": 0.804348,
+      "allRequiredDocumentsCoveredRateAt": 0.782609,
+      "crossDocumentQuestions": 23,
+      "distractorTopkRate": 0.166667,
+      "distractorQuestions": 6
+    },
+    "k=3": {
+      "questions": 23,
+      "hitAt": 1.0,
+      "recallAt": 0.978261,
+      "mrrAt": 0.905797,
+      "goldUnits": 25,
+      "goldUnitsCovered": 24,
+      "microRecall": 0.96,
+      "crossDocumentCoverageAt": 0.978261,
+      "allRequiredDocumentsCoveredRateAt": 0.956522,
+      "crossDocumentQuestions": 23,
+      "distractorTopkRate": 1.0,
+      "distractorQuestions": 6
+    }
+  },
+  "metricsTest": {
+    "k=1": {
+      "questions": 17,
+      "hitAt": 0.941176,
+      "recallAt": 0.882353,
+      "mrrAt": 0.941176,
+      "goldUnits": 19,
+      "goldUnitsCovered": 16,
+      "microRecall": 0.842105,
+      "crossDocumentCoverageAt": 0.882353,
+      "allRequiredDocumentsCoveredRateAt": 0.823529,
+      "crossDocumentQuestions": 17,
+      "distractorTopkRate": 1.0,
+      "distractorQuestions": 1
+    },
+    "k=3": {
+      "questions": 17,
+      "hitAt": 1.0,
+      "recallAt": 1.0,
+      "mrrAt": 0.970588,
+      "goldUnits": 19,
+      "goldUnitsCovered": 19,
+      "microRecall": 1.0,
+      "crossDocumentCoverageAt": 1.0,
+      "allRequiredDocumentsCoveredRateAt": 1.0,
+      "crossDocumentQuestions": 17,
+      "distractorTopkRate": 1.0,
+      "distractorQuestions": 1
+    }
+  },
+  "byCategory": {
+    "title-fact": {
+      "questions": 10,
+      "hitAt": 1.0,
+      "recallAt": 1.0,
+      "mrrAt": 1.0,
+      "goldUnits": 10,
+      "goldUnitsCovered": 10,
+      "microRecall": 1.0,
+      "crossDocumentCoverageAt": null,
+      "allRequiredDocumentsCoveredRateAt": null,
+      "crossDocumentQuestions": 0,
+      "distractorTopkRate": null,
+      "distractorQuestions": 0
+    },
+    "paraphrase-zh": {
+      "questions": 5,
+      "hitAt": 1.0,
+      "recallAt": 1.0,
+      "mrrAt": 0.9,
+      "goldUnits": 5,
+      "goldUnitsCovered": 5,
+      "microRecall": 1.0,
+      "crossDocumentCoverageAt": null,
+      "allRequiredDocumentsCoveredRateAt": null,
+      "crossDocumentQuestions": 0,
+      "distractorTopkRate": null,
+      "distractorQuestions": 0
+    },
+    "body-fact": {
+      "questions": 18,
+      "hitAt": 1.0,
+      "recallAt": 1.0,
+      "mrrAt": 0.962963,
+      "goldUnits": 18,
+      "goldUnitsCovered": 18,
+      "microRecall": 1.0,
+      "crossDocumentCoverageAt": null,
+      "allRequiredDocumentsCoveredRateAt": null,
+      "crossDocumentQuestions": 0,
+      "distractorTopkRate": null,
+      "distractorQuestions": 0
+    },
+    "same-title-different-content": {
+      "questions": 2,
+      "hitAt": 1.0,
+      "recallAt": 1.0,
+      "mrrAt": 0.75,
+      "goldUnits": 2,
+      "goldUnitsCovered": 2,
+      "microRecall": 1.0,
+      "crossDocumentCoverageAt": null,
+      "allRequiredDocumentsCoveredRateAt": null,
+      "crossDocumentQuestions": 0,
+      "distractorTopkRate": null,
+      "distractorQuestions": 0
+    },
+    "distractor": {
+      "questions": 1,
+      "hitAt": 1.0,
+      "recallAt": 1.0,
+      "mrrAt": 0.5,
+      "goldUnits": 1,
+      "goldUnitsCovered": 1,
+      "microRecall": 1.0,
+      "crossDocumentCoverageAt": null,
+      "allRequiredDocumentsCoveredRateAt": null,
+      "crossDocumentQuestions": 0,
+      "distractorTopkRate": null,
+      "distractorQuestions": 0
+    },
+    "cross-document": {
+      "questions": 4,
+      "hitAt": 1.0,
+      "recallAt": 0.875,
+      "mrrAt": 0.875,
+      "goldUnits": 8,
+      "goldUnitsCovered": 7,
+      "microRecall": 0.875,
+      "crossDocumentCoverageAt": null,
+      "allRequiredDocumentsCoveredRateAt": null,
+      "crossDocumentQuestions": 0,
+      "distractorTopkRate": null,
+      "distractorQuestions": 0
+    }
+  },
+  "noAnswer": {
+    "total": 10,
+    "retrievalRejected": 0,
+    "retrievalRejectionRate": 0.0,
+    "retrievalRejectionRateExcludingFailures": 0.0,
+    "serviceFailures": 0,
+    "okButEmpty": 0,
+    "okWithHits": 10,
+    "answerLevelRejection": null,
+    "answerLevelNote": "本次运行只调用 Embedding 与向量检索，未调用生成模型：回答级拒绝率未测。"
+  },
+  "noAnswerTest": {
+    "total": 3,
+    "retrievalRejected": 0,
+    "retrievalRejectionRate": 0.0,
+    "retrievalRejectionRateExcludingFailures": 0.0,
+    "serviceFailures": 0,
+    "okButEmpty": 0,
+    "okWithHits": 3,
+    "answerLevelRejection": null,
+    "answerLevelNote": "本次运行只调用 Embedding 与向量检索，未调用生成模型：回答级拒绝率未测。"
+  },
+  "latency": {
+    "retrieval": {
+      "n": 50,
+      "min": 5091.597,
+      "p50": 5181.5925,
+      "p95": 5343.0666,
+      "max": 5719.079,
+      "mean": 5207.46924
+    },
+    "embeddingPerQuery": {
+      "n": 50,
+      "min": 4913.723,
+      "p50": 4985.9775,
+      "p95": 5145.2004,
+      "max": 5534.283,
+      "mean": 5009.13836
+    }
+  },
+  "distanceSeparation": {
+    "answerable": {
+      "n": 40,
+      "min": 0.596402,
+      "p50": 0.815659,
+      "p95": 0.92486,
+      "max": 0.967608,
+      "mean": 0.808797
+    },
+    "unanswerable": {
+      "n": 10,
+      "min": 0.906947,
+      "p50": 0.959604,
+      "p95": 1.039464,
+      "max": 1.068988,
+      "mean": 0.963958
+    }
+  },
+  "ties": {
+    "questionsWithIdenticalDistances": 0,
+    "tolerance": 0.0
+  },
+  "failures": {
+    "serviceFailures": [],
+    "answerableMisses": [],
+    "unanswerableWithHits": [
+      {
+        "id": "q024",
+        "hitCount": 3
+      },
+      {
+        "id": "q025",
+        "hitCount": 3
+      },
+      {
+        "id": "q026",
+        "hitCount": 3
+      },
+      {
+        "id": "q027",
+        "hitCount": 3
+      },
+      {
+        "id": "q028",
+        "hitCount": 3
+      },
+      {
+        "id": "q029",
+        "hitCount": 3
+      },
+      {
+        "id": "q030",
+        "hitCount": 3
+      },
+      {
+        "id": "q048",
+        "hitCount": 3
+      },
+      {
+        "id": "q049",
+        "hitCount": 3
+      },
+      {
+        "id": "q050",
+        "hitCount": 3
+      }
+    ]
+  },
+  "counts": {
+    "total": 50,
+    "answerable": 40,
+    "unanswerable": 10,
+    "bySplit": {
+      "dev": 30,
+      "test": 20
+    },
+    "byCategory": {
+      "title-fact": 10,
+      "paraphrase-zh": 5,
+      "body-fact": 18,
+      "same-title-different-content": 2,
+      "distractor": 1,
+      "cross-document": 4,
+      "insufficient-info": 10
+    },
+    "bySplitAnswerable": {
+      "dev.answerable": 23,
+      "dev.unanswerable": 7,
+      "test.answerable": 17,
+      "test.unanswerable": 3
+    },
+    "requiredEvidenceUnits": 44,
+    "documents": {
+      "exobrain-overview": 15,
+      "rag-principles": 17,
+      "java-backend-faq": 12
+    }
+  },
+  "variant": "body-v1",
+  "criteria": {
+    "id": "body-window-v2",
+    "freeze": "evaluation/datasets/criteria-v2.json"
+  },
+  "rescoredFrom": {
+    "runId": "body-v1-v1-2026-10-14-20261018T111843Z",
+    "results": "evaluation/runs/body-v1/results.jsonl",
+    "resultsFingerprint": "6ef26a6a84bbd332bc7959f19824d23d2f0a424ed1098f618043bfe44abdbef8",
+    "note": "由该次真实运行的逐题检索结果原样重新计分；没有重新调用 Embedding 或数据库。"
+  },
+  "dataset": {
+    "path": "evaluation/datasets/questions-v1.jsonl",
+    "sha256": "c795c7f69d33fa56c8cafe8535300490057f3ec69bbdeb587958c535ae5df08f",
+    "testSplitSha256": "d60b933e5e3233b02ade04a344a9c73c71a6b1eca8bb9fb98699218662f67c78"
+  }
+}

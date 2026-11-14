@@ -47,24 +47,26 @@ def units_of_role(question, role):
     return [unit for unit in question.get("relevantEvidence") or [] if unit.get("role", "required") == role]
 
 
-def first_hit_rank(hits, unit):
+def first_hit_rank(hits, unit, covers=None):
+    """covers 为空时使用冻结口径 hit_covers_unit；其它口径见 exo_criteria.make_covers。"""
+    covers = covers or hit_covers_unit
     for hit in hits:
-        if hit_covers_unit(hit, unit):
+        if covers(hit, unit):
             return hit.get("rank")
     return None
 
 
-def score_question(question, result, k):
+def score_question(question, result, k, covers=None):
     """返回单题在 k 截断下的得分明细。"""
     hits = [hit for hit in (result.get("hits") or []) if hit.get("rank") is not None and hit.get("rank") <= k]
     required = units_of_role(question, "required")
     distractor = units_of_role(question, "distractor")
-    covered_required = [unit for unit in required if first_hit_rank(hits, unit) is not None]
+    covered_required = [unit for unit in required if first_hit_rank(hits, unit, covers) is not None]
     covered_docs = sorted(set(unit.get("docKey") for unit in covered_required))
     required_docs = sorted(set(unit.get("docKey") for unit in required))
-    ranks = [first_hit_rank(hits, unit) for unit in required]
+    ranks = [first_hit_rank(hits, unit, covers) for unit in required]
     ranks = [rank for rank in ranks if rank is not None]
-    covered_distractor = [unit for unit in distractor if first_hit_rank(hits, unit) is not None]
+    covered_distractor = [unit for unit in distractor if first_hit_rank(hits, unit, covers) is not None]
 
     top_rank = min(ranks) if ranks else None
     return {
@@ -128,7 +130,7 @@ def _finalize(bucket):
     }
 
 
-def aggregate(questions, results_by_id, k_values, split=None, scopes=None):
+def aggregate(questions, results_by_id, k_values, split=None, scopes=None, covers=None):
     """按 k 汇总指标；split 非空时只统计该 split；scopes 用于按语料范围裁剪题集。"""
     metrics = {}
     for k in k_values:
@@ -139,7 +141,7 @@ def aggregate(questions, results_by_id, k_values, split=None, scopes=None):
             if scopes is not None and question.get("id") not in scopes:
                 continue
             result = results_by_id.get(question.get("id")) or {"status": STATUS_UNAVAILABLE, "hits": []}
-            detail = score_question(question, result, k)
+            detail = score_question(question, result, k, covers)
             if not question.get("answerable"):
                 continue
             for bucket in (answerable_bucket,):
@@ -163,7 +165,7 @@ def aggregate(questions, results_by_id, k_values, split=None, scopes=None):
     return metrics
 
 
-def category_breakdown(questions, results_by_id, k, split=None):
+def category_breakdown(questions, results_by_id, k, split=None, covers=None):
     categories = {}
     for question in questions:
         if split and question.get("split") != split:
@@ -173,7 +175,7 @@ def category_breakdown(questions, results_by_id, k, split=None):
         category = question.get("category")
         bucket = categories.setdefault(category, _empty_bucket())
         result = results_by_id.get(question.get("id")) or {"status": STATUS_UNAVAILABLE, "hits": []}
-        detail = score_question(question, result, k)
+        detail = score_question(question, result, k, covers)
         bucket["questions"] += 1
         bucket["goldUnits"] += detail["goldUnits"]
         bucket["goldUnitsCovered"] += detail["goldUnitsCovered"]
@@ -223,7 +225,7 @@ def no_answer_stats(questions, results_by_id, split=None):
     }
 
 
-def failure_summary(questions, results_by_id):
+def failure_summary(questions, results_by_id, covers=None):
     failures = {"serviceFailures": [], "answerableMisses": [], "unanswerableWithHits": []}
     for question in questions:
         result = results_by_id.get(question.get("id")) or {"status": STATUS_UNAVAILABLE, "hits": []}
@@ -233,7 +235,7 @@ def failure_summary(questions, results_by_id):
             )
             continue
         if question.get("answerable"):
-            detail = score_question(question, result, 3)
+            detail = score_question(question, result, 3, covers)
             if not detail["hit"]:
                 top = (result.get("hits") or [{}])[0]
                 failures["answerableMisses"].append(
@@ -302,7 +304,8 @@ def tie_report(results, tolerance=1e-9):
     return {"questionsWithIdenticalDistances": questions_with_ties, "tolerance": tolerance}
 
 
-def build_summary(questions, results, k_values, scopes=None, split_scopes=None):
+def build_summary(questions, results, k_values, scopes=None, split_scopes=None, covers=None):
+    """covers 为空时按冻结口径计分，输出与历史 summary.json 完全一致。"""
     results_by_id = dict((row.get("id"), row) for row in results)
     summary = {
         "schemaVersion": 1,
@@ -310,15 +313,15 @@ def build_summary(questions, results, k_values, scopes=None, split_scopes=None):
         "questionCount": len(questions),
         "answerableQuestions": len([q for q in questions if q.get("answerable")]),
         "unanswerableQuestions": len([q for q in questions if not q.get("answerable")]),
-        "metricsAll": aggregate(questions, results_by_id, k_values, scopes=scopes),
-        "metricsDev": aggregate(questions, results_by_id, k_values, split="dev", scopes=scopes),
-        "metricsTest": aggregate(questions, results_by_id, k_values, split="test", scopes=scopes),
-        "byCategory": category_breakdown(questions, results_by_id, max(k_values)),
+        "metricsAll": aggregate(questions, results_by_id, k_values, scopes=scopes, covers=covers),
+        "metricsDev": aggregate(questions, results_by_id, k_values, split="dev", scopes=scopes, covers=covers),
+        "metricsTest": aggregate(questions, results_by_id, k_values, split="test", scopes=scopes, covers=covers),
+        "byCategory": category_breakdown(questions, results_by_id, max(k_values), covers=covers),
         "noAnswer": no_answer_stats(questions, results_by_id),
         "noAnswerTest": no_answer_stats(questions, results_by_id, split="test"),
         "latency": latency_report(results),
         "distanceSeparation": distance_separation(questions, results_by_id),
         "ties": tie_report(results),
-        "failures": failure_summary(questions, results_by_id),
+        "failures": failure_summary(questions, results_by_id, covers=covers),
     }
     return summary
