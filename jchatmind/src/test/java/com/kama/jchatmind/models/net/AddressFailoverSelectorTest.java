@@ -10,11 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * 地址重排只做一件事：把能连的排前面。这里用假探测器验证排序、缓存和「全坏也不丢地址」，
@@ -39,8 +40,15 @@ class AddressFailoverSelectorTest {
     void reachableAddressesComeFirstOrderedByLatency() {
         Map<String, Boolean> reachable = Map.of("10.0.0.1", false, "10.0.0.2", true, "10.0.0.3", true);
         Map<String, Long> latency = Map.of("10.0.0.2", 40_000_000L, "10.0.0.3", 5_000_000L);
+        ThreadLocal<Long> threadNanos = ThreadLocal.withInitial(() -> 0L);
         AddressFailoverSelector selector = new AddressFailoverSelector(
-                candidate -> reachable.getOrDefault(candidate.getHostAddress(), false), 500, 0);
+                candidate -> {
+                    threadNanos.set(threadNanos.get() + latency.getOrDefault(candidate.getHostAddress(), 0L));
+                    return reachable.getOrDefault(candidate.getHostAddress(), false);
+                },
+                500,
+                0,
+                threadNanos::get);
 
         List<InetAddress> ordered = selector.reorder("relay.example", threeAddresses());
 
@@ -48,7 +56,6 @@ class AddressFailoverSelectorTest {
         assertEquals("10.0.0.3", ordered.get(0).getHostAddress(), "更快可达的排第一");
         assertEquals("10.0.0.2", ordered.get(1).getHostAddress());
         assertEquals("10.0.0.1", ordered.get(2).getHostAddress(), "不可达的留作兜底");
-        assertTrue(latency.containsKey(ordered.get(0).getHostAddress()));
     }
 
     @Test
@@ -125,16 +132,20 @@ class AddressFailoverSelectorTest {
 
     @Test
     @DisplayName("可达集合随时间变化时，下一次缓存过期后重新排序")
-    void reorderAfterProbeResultsChange() throws Exception {
+    void reorderAfterProbeResultsChange() {
         Set<String> reachable = ConcurrentHashMap.newKeySet();
         reachable.add("10.0.0.1");
+        AtomicLong clockNanos = new AtomicLong(1_000_000_000L);
         AddressFailoverSelector selector = new AddressFailoverSelector(
-                candidate -> reachable.contains(candidate.getHostAddress()), 500, 50);
+                candidate -> reachable.contains(candidate.getHostAddress()),
+                500,
+                50,
+                clockNanos::get);
 
         assertEquals("10.0.0.1", selector.reorder("relay.example", threeAddresses()).get(0).getHostAddress());
         reachable.remove("10.0.0.1");
         reachable.add("10.0.0.3");
-        Thread.sleep(120);
+        clockNanos.addAndGet(TimeUnit.MILLISECONDS.toNanos(60));
 
         assertEquals("10.0.0.3", selector.reorder("relay.example", threeAddresses()).get(0).getHostAddress());
     }

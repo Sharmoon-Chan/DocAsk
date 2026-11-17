@@ -9,6 +9,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 import java.util.function.Predicate;
 
 /**
@@ -30,6 +31,7 @@ public class AddressFailoverSelector {
     private final Predicate<InetAddress> prober;
     private final long probeTimeoutMs;
     private final long cacheTtlMs;
+    private final LongSupplier nanoTime;
     private final Map<String, CachedOrder> cache = new LinkedHashMap<>();
     private static final ExecutorService PROBES = Executors.newCachedThreadPool(runnable -> {
         Thread thread = new Thread(runnable, "address-probe");
@@ -38,9 +40,14 @@ public class AddressFailoverSelector {
     });
 
     public AddressFailoverSelector(Predicate<InetAddress> prober, long probeTimeoutMs, long cacheTtlMs) {
+        this(prober, probeTimeoutMs, cacheTtlMs, System::nanoTime);
+    }
+
+    AddressFailoverSelector(Predicate<InetAddress> prober, long probeTimeoutMs, long cacheTtlMs, LongSupplier nanoTime) {
         this.prober = prober;
         this.probeTimeoutMs = Math.max(1L, probeTimeoutMs);
         this.cacheTtlMs = Math.max(0L, cacheTtlMs);
+        this.nanoTime = nanoTime != null ? nanoTime : System::nanoTime;
     }
 
     private record CachedOrder(long expiresAtNanos, List<InetAddress> addresses) {}
@@ -54,7 +61,7 @@ public class AddressFailoverSelector {
         if (resolved == null || resolved.size() <= 1) {
             return resolved == null ? List.of() : resolved;
         }
-        long now = System.nanoTime();
+        long now = nanoTime.getAsLong();
         CachedOrder cached = cache.get(host);
         if (cached != null && cached.expiresAtNanos() > now && cached.addresses().size() == resolved.size()) {
             return cached.addresses();
@@ -99,11 +106,11 @@ public class AddressFailoverSelector {
     }
 
     private Probe probe(InetAddress address) {
-        long started = System.nanoTime();
+        long started = nanoTime.getAsLong();
         try {
             boolean reachable = prober.test(address);
             return new Probe(address, reachable,
-                    reachable ? System.nanoTime() - started : Long.MAX_VALUE);
+                    reachable ? nanoTime.getAsLong() - started : Long.MAX_VALUE);
         } catch (RuntimeException failure) {
             return new Probe(address, false, Long.MAX_VALUE);
         }
