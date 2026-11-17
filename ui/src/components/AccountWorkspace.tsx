@@ -7,10 +7,24 @@ import LoginView from "./views/LoginView.tsx";
 export default function AccountWorkspace() {
   const account = useAccount();
   if (!account || account.status === "loading") {
-    return <div className="flex h-dvh flex-col items-center justify-center gap-3"><Spin /><span className="text-sm text-slate-500">正在连接账号工作区…</span></div>;
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center gap-3 bg-paper">
+        <Spin />
+        <span className="text-sm text-ink-soft">正在连接账号工作区…</span>
+      </div>
+    );
   }
   if (account.status === "error") {
-    return <div className="flex h-dvh items-center justify-center p-5"><Result status="warning" title="暂时无法连接" subTitle={account.error} extra={<Button type="primary" onClick={() => void account.refresh()}>重试</Button>} /></div>;
+    return (
+      <div className="flex h-dvh items-center justify-center bg-paper p-5">
+        <Result
+          status="warning"
+          title="暂时无法连接"
+          subTitle={account.error}
+          extra={<Button type="primary" onClick={() => void account.refresh()}>重试</Button>}
+        />
+      </div>
+    );
   }
   if (account.status !== "signedIn" || !account.user) return <LoginView />;
   return (

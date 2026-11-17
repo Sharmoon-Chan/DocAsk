@@ -56,18 +56,18 @@ export default function AccountMenu() {
     finally { setLoggingOut(false); }
   };
   return (
-    <div className="shrink-0 border-t-2 border-dashed border-sketch py-3">
+    <div className="shrink-0 border-t border-slate-200 px-3 py-3">
       <Dropdown trigger={["click"]} placement="topLeft" menu={{ items: [
         { key: "password", label: "修改密码", icon: <LockOutlined />, onClick: () => setPasswordOpen(true) },
         { key: "guest", label: <a href="/">游客免登录体验</a> },
         { type: "divider" },
         { key: "logout", label: "退出登录", icon: <LogoutOutlined />, onClick: () => void logout(), disabled: loggingOut },
       ] }}>
-        <Button type="text" block className="h-auto! px-2! py-2!" loading={loggingOut} aria-label="账号菜单">
-          <UserOutlined />
-          <span className="min-w-0 flex-1 truncate text-left">{user.displayName || user.username}</span>
-          <Tag color={user.role === "ADMIN" ? "purple" : "blue"} className="m-0!">{user.role === "ADMIN" ? "管理员" : "用户"}</Tag>
-          <DownOutlined className="text-xs" />
+        <Button type="text" block className="h-auto! rounded-lg! border! border-slate-200! bg-slate-50/70! px-2.5! py-2! hover:border-slate-300!" loading={loggingOut} aria-label="账号菜单">
+          <UserOutlined className="text-accent" />
+          <span className="min-w-0 flex-1 truncate text-left text-xs font-semibold text-ink">{user.displayName || user.username}</span>
+          <Tag color={user.role === "ADMIN" ? "cyan" : "default"} className="m-0! text-[11px]!">{user.role === "ADMIN" ? "管理员" : "用户"}</Tag>
+          <DownOutlined className="text-[10px] text-slate-400" />
         </Button>
       </Dropdown>
       {passwordOpen && <PasswordDialog onClose={() => setPasswordOpen(false)} />}

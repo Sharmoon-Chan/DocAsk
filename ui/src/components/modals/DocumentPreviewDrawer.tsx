@@ -200,7 +200,7 @@ function CitationNotice({
         className="mb-3"
         type="success"
         showIcon
-        message={`引用位置：第 ${location.startLine}–${location.endLine} 行`}
+        title={`引用位置：第 ${location.startLine}–${location.endLine} 行`}
         description="已按来源哈希校验，源码视图会高亮该范围。"
         action={<Button size="small" onClick={onShowSource}>在源码中查看</Button>}
       />
@@ -212,7 +212,7 @@ function CitationNotice({
         className="mb-3"
         type="warning"
         showIcon
-        message="文档已更新，原引用位置不可核验"
+        title="文档已更新，原引用位置不可核验"
         description="下面显示的是文档的当前版本，未对原引用范围做高亮。"
       />
     );
@@ -223,7 +223,7 @@ function CitationNotice({
         className="mb-3"
         type="warning"
         showIcon
-        message="无法核验来源哈希"
+        title="无法核验来源哈希"
         description={`当前环境不支持在浏览器内校验来源哈希；未核验的引用位置：第 ${location.startLine}–${location.endLine} 行。`}
       />
     );
@@ -233,7 +233,7 @@ function CitationNotice({
       className="mb-3"
       type="info"
       showIcon
-      message="该来源没有精确位置"
+      title="该来源没有精确位置"
       description="旧版索引只登记了文档本身，已为你打开整份文档。"
     />
   );
@@ -397,7 +397,7 @@ function renderSource(
       {before && <>{before}{"\n"}</>}
       <mark
         ref={highlightRef}
-        className="rounded bg-amber-200/80 px-0.5 text-inherit [box-decoration-break:clone]"
+        className="rounded border-l-2 border-accent bg-teal-100/75 px-1 text-ink [box-decoration-break:clone]"
       >
         {range}
       </mark>

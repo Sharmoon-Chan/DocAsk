@@ -2,25 +2,30 @@
 @config "../tailwind.config.js";
 
 /* ============================================================
-   问档 DocAsk 设计契约 —「黑白手稿 · 漫画手帐风」
-   - 纸 paper / 墨 ink / 素描 sketch / 铅笔 pencil，极少量 accent 蓝做功能点缀
-   - 手绘感：黑白虚线分隔、偏移硬阴影、角落波点、铅笔手绘对话框边框、
-     半透明磨砂面板（backdrop-blur）
-   - 动效只做状态反馈：hover 上浮、pop-in 回弹；尊重 reduced-motion
+   问档 DocAsk 设计系统 — 「瑞士档案布局 × 精密工程配色」
+   - 画布 #F8FAFC / 纯白卡片 #FFFFFF / 沉降面板 #F1F5F9
+   - 主文字 #0F172A / 次要 #475569 / 辅助 #64748B
+   - 主品牌色：深黛青 #0F766E（交互、选中、主行动）
+   - 语义色：核验翡翠 #059669 / 提示琥珀 #B45309 / 警示玫瑰 #BE123C
    ============================================================ */
 
 :root {
-  --eb-primary: #2b2724;
-  --eb-primary-soft: #ece7df;
-  --eb-primary-bg: #f4f1ec;
-  --eb-ink: #2b2724;
-  --eb-ink-soft: #7a746d;
-  --eb-paper: #faf7f2;
-  --eb-sketch: #e7e1d8;
-  --eb-pencil: #4a453f;
-  --eb-accent: #3b6ea5;
-  --eb-line: #e2ddd4;
-  --eb-radius-card: 18px;
+  --eb-primary: #0f766e;
+  --eb-primary-hover: #115e59;
+  --eb-primary-soft: #f0fdfa;
+  --eb-primary-border: #99f6e4;
+  --eb-ink: #0f172a;
+  --eb-ink-soft: #475569;
+  --eb-ink-muted: #64748b;
+  --eb-paper: #f8fafc;
+  --eb-surface: #ffffff;
+  --eb-surface-soft: #f1f5f9;
+  --eb-line: #e2e8f0;
+  --eb-line-strong: #cbd5e1;
+  --eb-verified: #059669;
+  --eb-verified-soft: #ecfdf5;
+  --eb-verified-border: #a7f3d0;
+  --eb-radius-card: 14px;
 }
 
 html,
@@ -33,97 +38,84 @@ body,
 body {
   color: var(--eb-ink);
   background:
-    radial-gradient(circle at 88% -8%, rgba(231, 225, 216, 0.55), transparent 42%),
-    radial-gradient(circle at -6% 105%, rgba(231, 225, 216, 0.6), transparent 40%),
+    radial-gradient(circle at 86% -6%, rgba(15, 118, 110, 0.055), transparent 42%),
+    radial-gradient(circle at -4% 102%, rgba(5, 150, 105, 0.045), transparent 38%),
     var(--eb-paper);
-  font-family: "Nunito", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Inter, "Segoe UI", system-ui, sans-serif;
-  font-weight: 500;
+  font-family: "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  font-weight: 450;
+  -webkit-font-smoothing: antialiased;
 }
 
 button:focus-visible,
 summary:focus-visible,
-[role="button"]:focus-visible {
-  outline: 2px dashed var(--eb-ink);
-  outline-offset: 3px;
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--eb-primary);
+  outline-offset: 2px;
   border-radius: 8px;
 }
 
 ::selection {
-  background: var(--eb-primary-soft);
+  background: #ccfbf1;
   color: var(--eb-ink);
 }
 
-/* ---------- 通用工具类 ---------- */
+/* ---------- 精密工程卡片与结构分隔 ---------- */
 
-/* 手绘风卡片：不规则圆角 + 黑白偏移硬阴影 + hover 微上浮 */
-.doodle-card {
-  border: 2px solid var(--eb-line);
-  background: #fff;
-  border-radius: 1.125rem 1.375rem 1rem 1.375rem / 1.375rem 1rem 1.375rem 1.125rem;
-  box-shadow: 4px 4px 0 0 rgba(43, 39, 36, 0.08);
+.arch-card {
+  border: 1px solid var(--eb-line);
+  background: var(--eb-surface);
+  border-radius: var(--eb-radius-card);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition:
-    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s ease-out,
+    border-color 0.15s ease-out,
+    background-color 0.15s ease-out;
+}
+
+.arch-card-interactive:hover {
+  transform: translateY(-1px);
+  border-color: var(--eb-line-strong);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 118, 110, 0.08);
+}
+
+.arch-card-featured {
+  border: 1.5px solid var(--eb-primary);
+  background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 100%);
+  border-radius: var(--eb-radius-card);
+  box-shadow: 0 4px 16px rgba(15, 118, 110, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s ease-out,
     border-color 0.15s ease-out;
 }
 
-.doodle-card:hover {
-  transform: translateY(-2px);
-  border-color: #d6cfc3;
-  box-shadow: 5px 6px 0 0 rgba(43, 39, 36, 0.13);
+.arch-card-featured:hover {
+  transform: translateY(-1px);
+  border-color: var(--eb-primary-hover);
+  box-shadow: 0 8px 24px rgba(15, 118, 110, 0.13);
 }
 
-.doodle-card:active {
-  transform: translateY(0);
-  box-shadow: 3px 3px 0 0 rgba(43, 39, 36, 0.1);
+.arch-divider {
+  border-top: 1px solid var(--eb-line);
 }
 
-/* 分隔虚线（手帐感） */
-.doodle-divider {
-  border-top: 2px dashed var(--eb-line);
+.arch-dashed {
+  border-top: 1px dashed var(--eb-line-strong);
 }
 
-/* 手绘涂鸦装饰：四角波点（配合相对定位容器使用） */
-.doodle-dots {
-  position: absolute;
-  width: 34px;
-  height: 34px;
-  pointer-events: none;
-  background-image: radial-gradient(circle, rgba(43, 39, 36, 0.22) 1.6px, transparent 1.7px);
-  background-size: 8px 8px;
-}
-
-/* 手绘涂鸦装饰：波浪线（近似铅笔笔触） */
-.doodle-squiggle {
-  text-decoration: underline wavy rgba(43, 39, 36, 0.4) 1.5px;
-  text-underline-offset: 4px;
-}
-
-/* 半透明磨砂面板 */
-.glass {
-  background: rgba(250, 247, 242, 0.72);
-  backdrop-filter: blur(14px) saturate(0.9);
-  -webkit-backdrop-filter: blur(14px) saturate(0.9);
-}
-
-.glass-card {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(10px) saturate(0.9);
-  -webkit-backdrop-filter: blur(10px) saturate(0.9);
-  border: 1.5px solid rgba(43, 39, 36, 0.1);
-}
-
-/* 滚动条：圆润细条 */
+/* 滚动条：克制细条 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #ddd6ca;
+  background: #cbd5e1;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c4bdae;
+  background: #94a3b8;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -151,22 +143,23 @@ summary:focus-visible,
   overflow: hidden;
 }
 
-/* ---------- Ant Design 主题微调（黑白手稿化） ---------- */
+/* ---------- Ant Design 统一精调（精密工程风格） ---------- */
 
-.ant-tabs-tab {
-  border-radius: 10px 10px 0 0;
+.ant-tabs .ant-tabs-tab {
+  font-weight: 600;
+  color: var(--eb-ink-muted);
 }
 
 .ant-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
-  color: var(--eb-ink) !important;
+  color: var(--eb-primary) !important;
   text-shadow: none;
   font-weight: 700;
 }
 
 .ant-tabs .ant-tabs-ink-bar {
-  background: linear-gradient(90deg, var(--eb-ink), var(--eb-pencil));
+  background: var(--eb-primary);
   border-radius: 999px;
-  height: 3px;
+  height: 2.5px;
 }
 
 .ant-tabs .ant-tabs-tab:hover {
@@ -175,20 +168,11 @@ summary:focus-visible,
 
 .ant-btn {
   font-weight: 600;
-  transition:
-    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.18s ease-out,
-    color 0.12s ease-out,
-    background-color 0.12s ease-out,
-    border-color 0.12s ease-out;
 }
 
-.ant-btn:not(.ant-btn-text):not(.ant-btn-link):hover {
-  transform: translateY(-1px);
-}
-
-.ant-btn:not(.ant-btn-text):not(.ant-btn-link):active {
-  transform: translateY(0);
+.ant-card {
+  border-color: var(--eb-line);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .ant-modal .ant-modal-content,
@@ -197,8 +181,8 @@ summary:focus-visible,
 }
 
 .ant-modal .ant-modal-content {
-  border: 2px solid var(--eb-line);
-  box-shadow: 6px 6px 0 0 rgba(43, 39, 36, 0.1);
+  border: 1px solid var(--eb-line);
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
 }
 
 .ant-tag {
@@ -207,23 +191,68 @@ summary:focus-visible,
 }
 
 .ant-empty .ant-empty-description {
-  color: var(--eb-ink-soft);
+  color: var(--eb-ink-muted);
 }
 
-/* Ant Design X Bubble：气泡更圆润 */
+/* Ant Design X Bubble：保留兼容以防子组件使用 */
 .ant-bubble .ant-bubble-body {
   min-width: 0;
   max-width: 100%;
 }
 
 .ant-bubble .ant-bubble-content {
-  border-radius: 16px;
+  border-radius: 14px;
   min-width: 0;
   max-width: 100%;
 }
 
 .answer-markdown {
   overflow-wrap: anywhere;
+  color: var(--eb-ink);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+
+.answer-markdown h1,
+.answer-markdown h2,
+.answer-markdown h3,
+.answer-markdown h4 {
+  color: var(--eb-ink);
+  font-weight: 700;
+  margin-top: 1em;
+  margin-bottom: 0.45em;
+  line-height: 1.4;
+}
+
+.answer-markdown h3 {
+  font-size: 1rem;
+}
+
+.answer-markdown > :first-child {
+  margin-top: 0;
+}
+
+.answer-markdown p {
+  margin-bottom: 0.65em;
+}
+
+.answer-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.answer-markdown ul,
+.answer-markdown ol {
+  padding-left: 1.35em;
+  margin-bottom: 0.65em;
+}
+
+.answer-markdown code {
+  font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 0.875em;
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 0.12em 0.38em;
+  border-radius: 5px;
 }
 
 .answer-markdown pre,
@@ -232,21 +261,58 @@ summary:focus-visible,
   overflow-x: auto;
 }
 
+.answer-markdown pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 0.7em 0;
+}
+
+.answer-markdown pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
 .answer-markdown table {
   display: block;
+  border-collapse: collapse;
+  margin: 0.65em 0;
+}
+
+.answer-markdown th,
+.answer-markdown td {
+  border: 1px solid var(--eb-line);
+  padding: 6px 10px;
+  font-size: 0.85em;
+}
+
+.answer-markdown th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.answer-markdown blockquote {
+  border-left: 3px solid var(--eb-primary);
+  background: var(--eb-primary-soft);
+  padding: 8px 12px;
+  border-radius: 0 8px 8px 0;
+  margin: 0.65em 0;
+  color: var(--eb-ink-soft);
 }
 
 /* 隐藏滚动条但保持滚动功能 */
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none; /* Chrome, Safari and Opera */
+  display: none;
 }
 
-/* ---------- Reduced motion：关闭全部装饰动效 ---------- */
+/* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

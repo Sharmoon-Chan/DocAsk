@@ -67,8 +67,8 @@ const AddKnowledgeBaseModal: React.FC<AddKnowledgeBaseModalProps> = ({
       <div className="py-4">
         <Alert className="mb-4!" type="info" showIcon title="新建知识库仅当前账号可见，不会自动公开。" />
         <div className="mb-4">
-          <label className="block text-gray-700 font-medium mb-2">
-            名称 <span className="text-red-500">*</span>
+          <label className="mb-2 block font-medium text-ink">
+            名称 <span className="text-rose-600">*</span>
           </label>
           <Input
             placeholder="请输入知识库名称"
@@ -80,7 +80,7 @@ const AddKnowledgeBaseModal: React.FC<AddKnowledgeBaseModalProps> = ({
           />
         </div>
         <div className="mb-6">
-          <label className="block text-gray-700 font-medium mb-2">
+          <label className="mb-2 block font-medium text-ink">
             描述
           </label>
           <TextArea

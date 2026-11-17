@@ -1,5 +1,5 @@
 ﻿import React, { useMemo } from "react";
-import { Button, Divider, Dropdown, Modal } from "antd";
+import { Button, Dropdown, Modal } from "antd";
 import type { MenuProps } from "antd";
 import {
   PlusOutlined,
@@ -26,7 +26,7 @@ const AgentTabContent: React.FC<AgentTabContentProps> = ({
   onDeleteAgent,
 }) => {
   const [modal, modalHolder] = Modal.useModal();
-  // 为每个 agent 生成 emoji
+
   const agentsWithEmoji = useMemo(() => {
     return agents.map((agent) => ({
       ...agent,
@@ -34,7 +34,6 @@ const AgentTabContent: React.FC<AgentTabContentProps> = ({
     }));
   }, [agents]);
 
-  // 创建右键菜单
   const getContextMenuItems = (agent: AgentVO): MenuProps["items"] => {
     const items: MenuProps["items"] = [];
     if (agent.readOnly) return items;
@@ -77,51 +76,65 @@ const AgentTabContent: React.FC<AgentTabContentProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col gap-3">
       {modalHolder}
-      {onCreateAgentClick && <><Button
-        color="geekblue"
-        variant="filled"
-        icon={<PlusOutlined />}
-        onClick={onCreateAgentClick}
-        className="w-full"
-      >
-        智能体助手
-      </Button>
-      <Divider /></>}
-      <div className="flex-1 overflow-y-auto bg-sketch/50 rounded-2xl p-1.5">
+      {onCreateAgentClick && (
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={onCreateAgentClick}
+          className="w-full"
+        >
+          新建智能体助手
+        </Button>
+      )}
+      <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">
         {agents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-sketch">
-            <p className="text-sm">暂无智能体</p>
-            {onCreateAgentClick && <p className="text-xs mt-1">点击上方按钮添加</p>}
+          <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-4 text-center text-slate-500">
+            <p className="text-xs font-medium">暂无智能体</p>
+            {onCreateAgentClick && <p className="mt-1 text-xs text-slate-400">点击上方按钮添加</p>}
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {agentsWithEmoji.map((agent) => {
               const menuItems = getContextMenuItems(agent);
               const hasMenu = menuItems && menuItems.length > 0;
               return (
                 <div
                   key={agent.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelectAgent(agent.id)}
-                  className="group relative w-full cursor-pointer rounded-xl border border-transparent bg-white px-3 py-3 shadow-[2px_2px_0_0_rgba(43, 39, 36,0.08)] transition-[transform,box-shadow,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:border-sketch hover:shadow-[3px_3px_0_0_rgba(43, 39, 36,0.16)]"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectAgent(agent.id);
+                    }
+                  }}
+                  className="group relative w-full cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-card transition-all duration-150 hover:-translate-y-px hover:border-accent/50 hover:shadow-card-hover"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sketch to-sketch flex items-center justify-center shrink-0 text-lg mt-0.5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-6">
+                  <div className="flex items-start gap-2.5">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-base">
                       {agent.emoji}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-ink truncate">
-                        {agent.name}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-sm font-semibold text-ink">
+                          {agent.name}
+                        </span>
+                        {agent.readOnly && (
+                          <span className="shrink-0 rounded bg-accent-soft px-1.5 py-0.5 text-[10px] font-semibold text-accent">
+                            公开
+                          </span>
+                        )}
                       </div>
-                      {agent.readOnly && <div className="mt-1 text-xs text-sketch0">公开助手</div>}
                       {agent.description && (
-                        <div className="text-xs text-slate-500 mt-1 line-clamp-1">
+                        <div className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
                           {agent.description}
                         </div>
                       )}
                       {agent.updatedAt && (
-                        <div className="text-xs text-slate-400 mt-1">
+                        <div className="mt-1 text-[11px] text-slate-400">
                           {formatDateTime(agent.updatedAt)}
                         </div>
                       )}
@@ -143,7 +156,7 @@ const AgentTabContent: React.FC<AgentTabContentProps> = ({
                             icon={<MoreOutlined />}
                             aria-label={`管理助手 ${agent.name}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-slate-400 hover:text-ink"
                           />
                         </Dropdown>
                       </div>

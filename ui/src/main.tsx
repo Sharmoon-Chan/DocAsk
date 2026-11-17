@@ -10,21 +10,25 @@ createRoot(document.getElementById("root")!).render(
     locale={zhCN}
     theme={{
       token: {
-        colorPrimary: "#2b2724",
-        colorInfo: "#3b6ea5",
-        colorLink: "#3b6ea5",
-        colorText: "#2b2724",
-        colorTextSecondary: "#7a746d",
-        colorBorder: "#e2ddd4",
-        colorBgLayout: "#faf7f2",
-        borderRadius: 14,
+        colorPrimary: "#0f766e",
+        colorInfo: "#0f766e",
+        colorLink: "#0f766e",
+        colorSuccess: "#059669",
+        colorWarning: "#b45309",
+        colorError: "#be123c",
+        colorText: "#0f172a",
+        colorTextSecondary: "#475569",
+        colorBorder: "#e2e8f0",
+        colorBgLayout: "#f8fafc",
+        borderRadius: 10,
         fontWeightStrong: 700,
       },
       components: {
-        Button: { borderRadius: 999, controlHeight: 36, fontWeight: 600 },
-        Input: { borderRadius: 14 },
-        Select: { borderRadius: 999 },
-        Card: { borderRadius: 18 },
+        Button: { borderRadius: 10, controlHeight: 36, fontWeight: 600 },
+        Input: { borderRadius: 10 },
+        Select: { borderRadius: 10 },
+        Card: { borderRadius: 14 },
+        Modal: { borderRadiusLG: 14 },
       },
     }}
   >

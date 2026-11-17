@@ -20,12 +20,6 @@ interface AgentChatInputProps {
   disabled?: boolean;
 }
 
-/**
- * 输入区把三种能力分开：可编辑草稿 / 可发送 / 可取消。
- * - 等待期间仍能写下一句（草稿不会被清空或锁定）；
- * - 发送按钮只在有内容且连接可用时提交，提交过程由发送协调器去重；
- * - 等待时发送按钮变为停止按钮，调用真实取消接口。
- */
 const AgentChatInput: React.FC<AgentChatInputProps> = ({
   value,
   onChange,
@@ -58,15 +52,16 @@ const AgentChatInput: React.FC<AgentChatInputProps> = ({
         onCancel={onCancel}
         canCancel={cancellable}
         cancelling={cancelling}
+        sendLabel="发送"
         placeholder={
           waiting
             ? "可以先写下一条问题，本轮结束后再发送"
             : connected
-              ? "输入消息…"
+              ? "继续追问当前对话…"
               : "连接恢复后可以继续提问"
         }
       />
-      <p className="mt-1 text-xs text-slate-400" role="status">
+      <p className="mt-1.5 text-xs text-slate-400" role="status">
         {hint}
       </p>
     </div>

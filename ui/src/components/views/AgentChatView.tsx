@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { Button, Empty, Spin, Tag } from "antd";
+import { Button, Empty, Spin } from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import RouteFallback from "../RouteFallback.tsx";
 import LazyBoundary from "../LazyBoundary.tsx";
@@ -446,16 +447,48 @@ function SessionChatView({ sessionId, agentCatalog }: { sessionId: string; agent
   }
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col">
-      <div className="shrink-0 border-b-2 border-dashed border-sketch bg-white/70 px-4 py-2 backdrop-blur-sm sm:px-8 sm:py-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="min-w-0 flex-1 truncate font-semibold text-ink">{session.title || "与问档 DocAsk 对话"}</span>
-          {IS_PUBLIC_DEMO && <Tag color="magenta" className="m-0">我的体验记录</Tag>}
-          <span className={connected ? "shrink-0 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-600" : "shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-600"}>
-            {connected ? "已连接" : connectionFailed ? "连接已断开，正在重试…" : "正在连接…"}
+    <div className="flex h-full min-h-0 min-w-0 flex-col bg-paper">
+      <div className="shrink-0 border-b border-slate-200 bg-white/90 px-4 py-2.5 backdrop-blur-sm sm:px-8">
+        <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => navigate("/chat")}
+              aria-label="返回体验台"
+              className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-xs text-slate-600 transition-colors hover:border-accent hover:text-accent"
+            >
+              <ArrowLeftOutlined />
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="min-w-0 truncate text-sm font-bold text-ink sm:text-[15px]">
+                  {session.title || "与问档 DocAsk 对话"}
+                </span>
+                {IS_PUBLIC_DEMO && (
+                  <span className="shrink-0 rounded-full border border-accent-border bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">
+                    我的体验记录
+                  </span>
+                )}
+              </div>
+              <SessionAgentLabel agentId={session.agentId} catalog={agentCatalog} className="mt-0.5 text-xs" />
+            </div>
+          </div>
+
+          <span
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+              connected
+                ? "border-verified-border bg-verified-soft text-verified"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                connected ? "bg-verified" : "animate-pulse bg-amber-500"
+              }`}
+            />
+            {connected ? "SSE 已连接" : connectionFailed ? "连接已断开，正在重试…" : "正在连接…"}
           </span>
         </div>
-        <SessionAgentLabel agentId={session.agentId} catalog={agentCatalog} className="mt-1 text-xs" />
       </div>
       <LazyBoundary title="阅读区没有加载成功">
         <Suspense fallback={<RouteFallback label="正在准备阅读区…" />}>
@@ -475,10 +508,10 @@ function SessionChatView({ sessionId, agentCatalog }: { sessionId: string; agent
         </Suspense>
       </LazyBoundary>
       <div
-        className="shrink-0 border-t-2 border-dashed border-sketch bg-white/70 backdrop-blur-sm"
+        className="shrink-0 border-t border-slate-200 bg-white/90 backdrop-blur-sm"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
-        <div className="mx-auto w-full max-w-3xl px-4 pt-3 sm:px-8">
+        <div className="mx-auto w-full max-w-4xl px-4 pt-3 sm:px-8">
           {completionNotice && <p role="status" className="mb-1.5 break-words text-xs text-slate-500">{completionNotice}</p>}
           {!session.agentId && <p className="mb-1.5 text-xs text-slate-500">此会话的 Agent 绑定未记录或已移除。历史仍可查看，请新建对话继续提问。</p>}
           <AgentChatInput
@@ -492,7 +525,11 @@ function SessionChatView({ sessionId, agentCatalog }: { sessionId: string; agent
             connected={connected}
             disabled={!session.agentId}
           />
-          {IS_PUBLIC_DEMO && <p className="mt-1.5 text-center text-xs text-slate-400">历史仅对当前浏览器可见；回答会标注来源，执行过程可展开查看。</p>}
+          {IS_PUBLIC_DEMO && (
+            <p className="mt-1.5 text-center text-[11px] text-slate-400">
+              历史仅对当前浏览器可见；回答会标注来源，执行过程与工具入参出参可展开核对。
+            </p>
+          )}
         </div>
       </div>
     </div>

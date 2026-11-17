@@ -84,21 +84,21 @@ export default function UsersManagementView() {
     finally { setUpdating(null); }
   };
   const columns: TableColumnsType<AccountUser> = [
-    { title: "账号", key: "username", render: (_, user) => <div><span className="font-medium text-slate-900">{user.username}</span>{account?.user?.id === user.id && <Tag className="ml-2!">我</Tag>}<div className="mt-1 text-xs text-slate-500">{user.displayName}</div></div> },
-    { title: "角色", dataIndex: "role", width: 100, render: (role: AccountUser["role"]) => <Tag color={role === "ADMIN" ? "purple" : "blue"}>{role === "ADMIN" ? "管理员" : "用户"}</Tag> },
+    { title: "账号", key: "username", render: (_, user) => <div><span className="font-semibold text-ink">{user.username}</span>{account?.user?.id === user.id && <Tag color="cyan" className="ml-2!">我</Tag>}<div className="mt-1 text-xs text-slate-500">{user.displayName}</div></div> },
+    { title: "角色", dataIndex: "role", width: 100, render: (role: AccountUser["role"]) => <Tag color={role === "ADMIN" ? "cyan" : "default"}>{role === "ADMIN" ? "管理员" : "用户"}</Tag> },
     { title: "状态", key: "enabled", width: 100, render: (_, user) => <Switch aria-label={`${user.username} 账号状态`} checkedChildren="启用" unCheckedChildren="停用" checked={user.enabled} loading={updating === user.id} disabled={!!updating} onChange={(enabled) => void toggleEnabled(user, enabled)} /> },
-    { title: "创建时间", dataIndex: "createdAt", responsive: ["lg"], width: 175, render: (value?: string) => value ? value.replace("T", " ").slice(0, 16) : "—" },
+    { title: "创建时间", dataIndex: "createdAt", responsive: ["lg"], width: 175, render: (value?: string) => <span className="font-mono text-xs text-slate-500">{value ? value.replace("T", " ").slice(0, 16) : "—"}</span> },
     { title: "操作", key: "action", width: 90, render: (_, user) => <Button type="link" size="small" icon={<EditOutlined />} aria-label={`编辑账号 ${user.username}`} onClick={() => setEditor({ user })}>编辑</Button> },
   ];
   return (
-    <section className="h-full min-w-0 overflow-y-auto bg-slate-50/60 p-5 sm:p-8" aria-label="用户管理">
+    <section className="h-full min-w-0 overflow-y-auto bg-paper p-5 sm:p-8" aria-label="用户管理">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-          <div><Typography.Title level={2} className="mb-2!">用户管理</Typography.Title><p className="text-sm leading-6 text-slate-500">创建账号，调整角色、登录状态和密码。</p></div>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5">
+          <div><Typography.Title level={2} className="mb-1.5! tracking-tight text-ink!">用户管理</Typography.Title><p className="text-sm leading-6 text-ink-soft">创建账号，调整角色、登录状态和密码。</p></div>
           <Space wrap><Button icon={<ReloadOutlined />} onClick={() => void load()} loading={loading}>刷新</Button><Button type="primary" icon={<PlusOutlined />} onClick={() => setEditor({ user: null })}>新增账号</Button></Space>
         </div>
         {error && <Alert type="error" showIcon title={error} className="mb-4!" />}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="arch-card overflow-hidden">
           <Table rowKey="id" columns={columns} dataSource={users} loading={loading} pagination={{ pageSize: 10, showTotal: (total) => `共 ${total} 个账号` }} scroll={{ x: 440 }} />
         </div>
         {editor && <UserEditor user={editor.user} onClose={() => setEditor(null)} onSaved={saved} />}

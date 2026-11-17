@@ -21,18 +21,19 @@ export default function PublicDemoBootstrap({ children }: { children: ReactNode 
   if (status === "ready") return children;
 
   return (
-    <div className="flex h-dvh items-center justify-center bg-white p-6">
-      <div className="max-w-sm text-center">
-        <ExoBrainLogo className="mx-auto mb-5 h-14 w-14" />
-        <h1 className="mb-3 text-2xl font-semibold text-slate-900">问档 DocAsk</h1>
+    <div className="flex h-dvh items-center justify-center bg-paper p-6">
+      <div className="arch-card w-full max-w-sm p-7 text-center">
+        <ExoBrainLogo className="mx-auto mb-4 h-12 w-12" />
+        <h1 className="mb-1 text-xl font-bold tracking-tight text-ink">问档 DocAsk</h1>
+        <p className="mb-5 text-xs font-medium text-ink-muted">可核验原文出处与执行轨迹的文档 Agent</p>
         {status === "loading" ? (
-          <div role="status" className="space-y-4 text-sm text-slate-500">
-            <p>正在准备公开体验…</p>
+          <div role="status" className="space-y-3 text-sm text-ink-soft">
             <Spin />
+            <p>正在连接公开体验环境…</p>
           </div>
         ) : (
           <div role="alert">
-            <p className="mb-5 text-sm leading-6 text-slate-500">公开体验暂时无法连接，请检查网络后重试。</p>
+            <p className="mb-5 text-sm leading-6 text-ink-soft">公开体验暂时无法连接，请检查网络后重试。</p>
             <Button type="primary" icon={<ReloadOutlined />} onClick={() => {
               setStatus("loading");
               setAttempt((value) => value + 1);

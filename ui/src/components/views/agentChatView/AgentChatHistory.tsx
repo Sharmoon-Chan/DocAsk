@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Bubble } from "@ant-design/x";
 import XMarkdown from "@ant-design/x-markdown";
 import {
+  CheckCircleOutlined,
   DownOutlined,
   FileSearchOutlined,
   ReloadOutlined,
@@ -49,6 +49,7 @@ interface AgentChatHistoryProps {
 const TOOL_LABELS: Record<string, string> = {
   KnowledgeTool: "知识库检索",
   getDate: "日期查询",
+  sourceAnswer: "原文交付",
   directAnswer: "生成回答",
   terminate: "结束任务",
 };
@@ -90,7 +91,6 @@ const RUN_STATUS_LABELS: Record<RunStatus, string> = {
   QUEUED: "排队中",
   RUNNING: "执行中",
   SUCCEEDED: "已完成",
-  // 面向访客用「未完成」：失败已经由下面的说明与重试按钮承接，不再用刺眼的「失败」当标题。
   FAILED: "未完成",
   CANCELLED: "已取消",
   INTERRUPTED: "已中断",
@@ -98,8 +98,8 @@ const RUN_STATUS_LABELS: Record<RunStatus, string> = {
 
 const RUN_STATUS_CLASSES: Record<RunStatus, string> = {
   QUEUED: "text-slate-500",
-  RUNNING: "text-sky-700",
-  SUCCEEDED: "text-teal-700",
+  RUNNING: "text-accent",
+  SUCCEEDED: "text-verified",
   FAILED: "text-amber-700",
   CANCELLED: "text-amber-700",
   INTERRUPTED: "text-amber-700",
@@ -117,10 +117,6 @@ const RUN_EVENT_LABELS: Record<RunEventType, string> = {
   ERROR: "执行错误",
 };
 
-/**
- * 错误码只在「查看过程」里作为技术细节出现，正文里不出现英文枚举。
- * 每个失败场景给一句人话说明 + 一句下一步建议，避免看起来像系统崩了。
- */
 const RUN_ERROR_LABELS: Record<string, string> = {
   AUTHORIZATION_REVOKED: "登录状态失效",
   MODEL_UNAVAILABLE: "模型服务未响应（已自动重试）",
@@ -136,15 +132,11 @@ const RUN_ERROR_LABELS: Record<string, string> = {
 };
 
 interface FailureText {
-  /** 一句话说明发生了什么，不暴露内部枚举。 */
   title: string;
-  /** 下一步该怎么做。 */
   hint: string;
-  /** 是否值得让访客直接重试同一问题。 */
   retryable: boolean;
 }
 
-/** 按错误分类给出面向访客的说明；未知分类只描述现象，不猜测原因。 */
 function failureText(errorCode: string | null | undefined, status: RunStatus): FailureText {
   switch (errorCode) {
     case "INVALID_ANSWER_FORMAT":
@@ -205,7 +197,6 @@ function failureText(errorCode: string | null | undefined, status: RunStatus): F
   }
 }
 
-/** 只格式化服务端记录的耗时；未知就是「未记录」，不用浏览器计时补齐。 */
 function formatDuration(ms: number | null | undefined): string {
   if (ms == null) return "未记录";
   if (ms < 1000) return `${ms} ms`;
@@ -240,10 +231,6 @@ function runEventDetail(event: RunEventView): string {
   return RUN_EVENT_LABELS[event.type];
 }
 
-/**
- * 仍在进行中的状态说明。终态说明统一由 {@link failureText} 给出，
- * 这里不再重复一遍，避免「标题」与「正文」说同一句话。
- */
 function runInProgressDetail(run: RunSummaryView): string | null {
   const status: RunStatus = run.interrupted ? "INTERRUPTED" : run.status;
   if (status === "QUEUED") return "任务已受理，正在等待执行。";
@@ -259,7 +246,6 @@ interface CitationGroup {
   citations: AnswerCitation[];
 }
 
-/** 按 documentId + sourceHash 分组：同名文档的不同版本不合并。 */
 function groupCitations(citations: AnswerCitation[]): CitationGroup[] {
   const groups = new Map<string, CitationGroup>();
   for (const citation of citations) {
@@ -281,10 +267,6 @@ function groupCitations(citations: AnswerCitation[]): CitationGroup[] {
   return [...groups.values()];
 }
 
-/**
- * 紧凑来源入口：默认只显示「来源：文档名 · 共 N 处引用」，展开后保留每一处不同的证据与位置。
- * 来源只来自服务端核验后写入的 metadata.citations；正文里的 [1] 或 Markdown 链接不会出现在这里。
- */
 const CitationEntry: React.FC<{
   citations: AnswerCitation[];
   onOpen: (citation: AnswerCitation) => void;
@@ -302,50 +284,62 @@ const CitationEntry: React.FC<{
   const panelId = `citations-${useId()}`;
 
   return (
-    <section className="mt-3 min-w-0 max-w-full rounded-xl border border-teal-100 bg-teal-50/50 text-xs" aria-label="回答来源">
+    <section
+      className="mt-3.5 min-w-0 max-w-full rounded-xl border border-verified-border bg-verified-soft/65 text-xs"
+      aria-label="回答来源"
+    >
       <button
         type="button"
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded((value) => !value)}
-        className="flex min-h-11 w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 rounded-xl px-3 py-2 text-left hover:bg-teal-100/60"
+        className="flex min-h-10 w-full min-w-0 cursor-pointer flex-wrap items-center gap-x-2 gap-y-0.5 rounded-xl px-3.5 py-2 text-left transition-colors hover:bg-verified-soft"
       >
-        <FileSearchOutlined className="shrink-0 text-teal-700" />
-        <span className="min-w-0 flex-1 break-words font-medium text-teal-800">来源：{label}</span>
-        <span className="shrink-0 text-teal-700/80">共 {citations.length} 处引用</span>
-        <span className="flex shrink-0 items-center gap-1 font-semibold text-teal-800">
+        <FileSearchOutlined className="shrink-0 text-verified" />
+        <span className="min-w-0 flex-1 break-words font-semibold text-emerald-900">
+          已核验来源：{label}
+        </span>
+        <span className="shrink-0 font-mono text-verified">共 {citations.length} 处引用</span>
+        <span className="flex shrink-0 items-center gap-1 font-semibold text-emerald-900">
           {expanded ? "收起来源" : "查看全部依据"}
           <DownOutlined className={expanded ? "rotate-180 transition-transform duration-200" : "transition-transform duration-200"} />
         </span>
       </button>
       {expanded && (
-        <div id={panelId} className="border-t border-teal-100 px-3 py-2">
+        <div id={panelId} className="border-t border-verified-border px-3.5 py-3">
           <ul className="flex flex-col gap-3">
             {groups.map((group) => (
               <li key={group.key} className="min-w-0">
-                <p className="mb-1 break-all font-semibold text-slate-700">
+                <p className="mb-1.5 break-all text-xs font-bold text-ink">
                   {group.documentName}
                   <span className="ml-2 font-normal text-slate-400">本条文档 {group.citations.length} 处片段</span>
                 </p>
                 <ul className="flex flex-col gap-2">
                   {group.citations.map((citation, index) => (
-                    <li key={citationKey(citation, index)} className="min-w-0">
+                    <li
+                      key={citationKey(citation, index)}
+                      className="min-w-0 rounded-lg border border-slate-200 bg-white p-2.5 shadow-card"
+                    >
                       <button
                         type="button"
                         onClick={() => onOpen(citation)}
                         aria-label={`打开来源 ${citation.label}：${citation.source.documentName}`}
-                        className="flex w-full min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 rounded-lg border border-transparent px-1.5 py-1 text-left hover:border-teal-200 hover:bg-teal-100/60"
+                        className="flex w-full min-w-0 cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 text-left"
                       >
-                        <span className="font-mono font-medium text-teal-700">[{citation.label}]</span>
-                        <span className="text-slate-600">{citationPosition(citation)}</span>
+                        <span className="rounded bg-accent-soft px-1.5 py-0.5 font-mono text-[11px] font-bold text-accent">
+                          [{citation.label}]
+                        </span>
+                        <span className="font-semibold text-ink">{citationPosition(citation)}</span>
                         {citationHeading(citation) && (
                           <span className="min-w-0 break-words text-slate-500">{citationHeading(citation)}</span>
                         )}
-                        <span className="ml-auto shrink-0 font-semibold text-teal-700">查看原文</span>
+                        <span className="ml-auto shrink-0 rounded-md border border-accent-border bg-accent-soft px-2 py-0.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-white">
+                          查看原文 →
+                        </span>
                       </button>
-                      <p className="mt-0.5 break-words px-1.5 leading-5 text-slate-600">{citation.excerpt}</p>
-                      <p className="mt-0.5 break-all px-1.5 font-mono text-[11px] text-slate-400">
-                        哈希 {citation.source.sourceHash ? citation.source.sourceHash.slice(0, 16) : "无（旧版索引）"}
+                      <p className="mt-1.5 break-words leading-5 text-slate-600">{citation.excerpt}</p>
+                      <p className="mt-1 break-all font-mono text-[11px] text-slate-400">
+                        SHA-256 {citation.source.sourceHash ? citation.source.sourceHash.slice(0, 16) : "无（旧版索引）"}
                         {citation.chunkId ? ` · 片段 ${citation.chunkId}` : ""}
                         {citation.indexVersion || citation.indexRevision
                           ? ` · 索引 ${[citation.indexVersion, citation.indexRevision].filter(Boolean).join(" / ")}`
@@ -363,10 +357,6 @@ const CitationEntry: React.FC<{
   );
 };
 
-/**
- * 超长回答的阅读容器：默认限制高度但保留完整 Markdown，展开后不截断。
- * 不复制、不摘要，不用「短答」伪装；展开状态通过 aria-expanded/aria-controls 暴露。
- */
 const AnswerBody: React.FC<{ messageId: string; content: string }> = ({ messageId, content }) => {
   const [expanded, setExpanded] = useState(false);
   const collapsible = content.length > LONG_ANSWER_THRESHOLD;
@@ -389,7 +379,7 @@ const AnswerBody: React.FC<{ messageId: string; content: string }> = ({ messageI
           aria-expanded={expanded}
           aria-controls={panelId}
           onClick={() => setExpanded((value) => !value)}
-          className="mt-1 inline-flex min-h-9 items-center gap-1 rounded-lg px-1 text-xs font-semibold text-sketch0 hover:underline"
+          className="mt-1.5 inline-flex min-h-8 cursor-pointer items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-accent hover:underline"
         >
           <DownOutlined className={expanded ? "rotate-180 transition-transform duration-200" : "transition-transform duration-200"} />
           {expanded ? "收起回答" : `展开完整回答（共 ${content.length} 字）`}
@@ -399,7 +389,6 @@ const AnswerBody: React.FC<{ messageId: string; content: string }> = ({ messageI
   );
 };
 
-/** 运行详情时间线：自己维护 loading / ready / error，失败可重试，重试不清空已有内容。 */
 const RunTimeline: React.FC<{ runId: string }> = ({ runId }) => {
   const [attempt, setAttempt] = useState(0);
   const [events, setEvents] = useState<RunEventView[] | null>(null);
@@ -434,13 +423,13 @@ const RunTimeline: React.FC<{ runId: string }> = ({ runId }) => {
   if (events == null) return <p className="text-slate-400">正在读取执行过程…</p>;
   if (events.length === 0) return <p className="text-slate-400">这次执行没有记录到步骤。</p>;
   return (
-    <ol className="flex flex-col gap-1">
+    <ol className="flex flex-col gap-1.5 font-mono text-[11.5px]">
       {events.map((event) => (
-        <li key={`${event.sequence}-${event.type}`} className="flex flex-wrap items-baseline gap-x-2">
-          <span className="font-mono text-slate-400">#{event.sequence}</span>
-          <span className="text-slate-700">{runEventDetail(event)}</span>
+        <li key={`${event.sequence}-${event.type}`} className="flex flex-wrap items-baseline gap-x-2.5 rounded-md bg-white px-2.5 py-1.5 border border-slate-200/80">
+          <span className="font-bold text-slate-400">#{event.sequence}</span>
+          <span className="min-w-0 flex-1 font-sans text-slate-700">{runEventDetail(event)}</span>
           <span className="text-slate-400">{formatDuration(event.durationMs)}</span>
-          <span className={event.status === "SUCCEEDED" ? "text-teal-700" : "text-rose-700"}>
+          <span className={event.status === "SUCCEEDED" ? "font-sans font-semibold text-verified" : "font-sans font-semibold text-rose-700"}>
             {event.status === "SUCCEEDED" ? "成功" : event.status === "FAILED" ? "失败" : "已取消"}
           </span>
         </li>
@@ -449,10 +438,6 @@ const RunTimeline: React.FC<{ runId: string }> = ({ runId }) => {
   );
 };
 
-/**
- * 一轮的执行过程：工具调用与工具结果合并到同一处，摘要只显示状态与真实耗时。
- * 展开后才读取服务端时间线；没有运行记录时如实说明，不补造步骤。
- */
 const ProcessDisclosure: React.FC<{
   run?: RunSummaryView;
   sessionId?: string;
@@ -466,45 +451,44 @@ const ProcessDisclosure: React.FC<{
 
   return (
     <details
-      className="mt-2 min-w-0 rounded-xl border border-slate-200 bg-slate-50/70 text-xs"
+      className="mt-2.5 min-w-0 rounded-xl border border-slate-200 bg-slate-50/90 text-xs"
       onToggle={(event) => {
         if ((event.target as HTMLDetailsElement).open) setOpened(true);
       }}
     >
-      <summary className="flex min-h-11 cursor-pointer flex-wrap items-center gap-x-2 gap-y-0.5 px-3 py-2 leading-6">
-        <RobotOutlined className="shrink-0 text-slate-400" />
-        <span className="font-medium text-slate-700">{run ? "执行过程" : "工具记录"}</span>
-        {status && <span className={RUN_STATUS_CLASSES[status]}>{RUN_STATUS_LABELS[status]}</span>}
-        {run && <span className="text-slate-500">执行 {formatDuration(run.durationMs)}</span>}
+      <summary className="flex min-h-10 cursor-pointer flex-wrap items-center gap-x-2.5 gap-y-0.5 px-3.5 py-2 leading-6">
+        <RobotOutlined className="shrink-0 text-accent" />
+        <span className="font-semibold text-ink">{run ? "执行过程" : "工具记录"}</span>
+        {status && <span className={`font-semibold ${RUN_STATUS_CLASSES[status]}`}>{RUN_STATUS_LABELS[status]}</span>}
+        {run && <span className="font-mono text-slate-500">耗时 {formatDuration(run.durationMs)}</span>}
         {run?.queueDurationMs != null && run.queueDurationMs >= 1000 && (
-          <span className="text-slate-400">排队 {formatDuration(run.queueDurationMs)}</span>
+          <span className="font-mono text-slate-400">排队 {formatDuration(run.queueDurationMs)}</span>
         )}
-        {toolCount > 0 && <span className="text-slate-400">{toolCalls.length} 次工具调用</span>}
-        {run?.modelName && <span className="font-mono text-slate-400">{run.modelName}</span>}
+        {toolCount > 0 && <span className="text-slate-500">{toolCalls.length} 次工具调用</span>}
+        {run?.modelName && <span className="rounded bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-500 border border-slate-200">{run.modelName}</span>}
         {run?.traceIncomplete && <span className="text-amber-600">执行详情不完整</span>}
-        <span className="ml-auto shrink-0 text-slate-400">查看过程</span>
+        <span className="ml-auto shrink-0 font-semibold text-accent">查看过程</span>
       </summary>
-      <div className="flex flex-col gap-2 border-t border-slate-200 px-3 py-2">
+      <div className="flex flex-col gap-2.5 border-t border-slate-200 px-3.5 py-3">
         {opened && run && canLoadTimeline && <RunTimeline runId={run.runId} />}
         {opened && run && !canLoadTimeline && <p className="text-slate-400">当前页面没有读取执行过程所需的信息。</p>}
-        {opened && run && formatUsage(run) && <p className="text-slate-400">{formatUsage(run)}</p>}
-        {/* 错误分类是给排查用的技术细节：只在展开后出现，正文里不展示英文枚举。 */}
+        {opened && run && formatUsage(run) && <p className="font-mono text-[11px] text-slate-500">{formatUsage(run)}</p>}
         {opened && run?.errorCode && (
-          <p className="break-all font-mono text-[11px] text-slate-400">
+          <p className="break-all font-mono text-[11px] text-slate-500">
             错误分类 {run.errorCode} · {RUN_ERROR_LABELS[run.errorCode] ?? "未分类"}
           </p>
         )}
         {toolCalls.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <p className="font-medium text-slate-600">工具调用</p>
+            <p className="font-semibold text-slate-600">工具调用</p>
             {toolCalls.map((toolCall) => (
-              <details key={toolCall.id} className="min-w-0 rounded-lg border border-dashed border-sketch bg-white/70">
-                <summary className="flex min-h-9 cursor-pointer items-center gap-1.5 px-2 py-1 leading-6 text-slate-600">
-                  <ToolOutlined className="shrink-0 text-sketch0" />
-                  <span className="font-medium">{TOOL_LABELS[toolCall.name] || toolCall.name}</span>
-                  <span className="font-mono text-slate-400">{toolCall.name}</span>
+              <details key={toolCall.id} className="min-w-0 rounded-lg border border-slate-200 bg-white">
+                <summary className="flex min-h-9 cursor-pointer items-center gap-1.5 px-2.5 py-1 leading-6 text-slate-700">
+                  <ToolOutlined className="shrink-0 text-accent" />
+                  <span className="font-semibold">{TOOL_LABELS[toolCall.name] || toolCall.name}</span>
+                  <span className="font-mono text-[11px] text-slate-400">{toolCall.name}</span>
                 </summary>
-                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words border-t border-dashed border-sketch px-2 py-1.5 leading-6 text-slate-600">
+                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words border-t border-slate-200 bg-slate-50 px-2.5 py-2 font-mono text-[11.5px] leading-6 text-slate-700">
                   {formatToolData(toolCall.arguments)}
                 </pre>
               </details>
@@ -513,15 +497,15 @@ const ProcessDisclosure: React.FC<{
         )}
         {toolResponses.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <p className="font-medium text-slate-600">工具结果</p>
+            <p className="font-semibold text-slate-600">工具结果</p>
             {toolResponses.map((toolResponse) => (
-              <details key={toolResponse.id} className="min-w-0 rounded-lg border border-dashed border-sketch bg-white/70">
-                <summary className="flex min-h-9 cursor-pointer items-center gap-1.5 px-2 py-1 leading-6 text-slate-600">
-                  <FileSearchOutlined className="shrink-0 text-sketch0" />
-                  <span className="font-medium">{TOOL_LABELS[toolResponse.name] || toolResponse.name}</span>
-                  <span className="font-mono text-slate-400">{toolResponse.name}</span>
+              <details key={toolResponse.id} className="min-w-0 rounded-lg border border-slate-200 bg-white">
+                <summary className="flex min-h-9 cursor-pointer items-center gap-1.5 px-2.5 py-1 leading-6 text-slate-700">
+                  <FileSearchOutlined className="shrink-0 text-accent" />
+                  <span className="font-semibold">{TOOL_LABELS[toolResponse.name] || toolResponse.name}</span>
+                  <span className="font-mono text-[11px] text-slate-400">{toolResponse.name}</span>
                 </summary>
-                <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words border-t border-dashed border-sketch px-2 py-1.5 leading-6 text-slate-600">
+                <pre className="max-h-80 overflow-auto whitespace-pre-wrap break-words border-t border-slate-200 bg-slate-50 px-2.5 py-2 font-mono text-[11.5px] leading-6 text-slate-700">
                   {formatToolData(toolResponse.responseData)}
                 </pre>
               </details>
@@ -533,12 +517,6 @@ const ProcessDisclosure: React.FC<{
   );
 };
 
-/**
- * 没有 assistant 消息的终态运行也必须可见。提交前取消、首次模型调用失败、运行中进程崩溃
- * 都可能不产生 assistant 消息，状态只能来自持久化的运行记录。
- *
- * 访客看到的是「发生了什么 + 该怎么办 + 一个重试按钮」；英文错误码只留在展开后的过程详情里。
- */
 const RunOutcomeNotice: React.FC<{ run: RunSummaryView; onRetry?: () => void }> = ({ run, onRetry }) => {
   const status: RunStatus = run.interrupted ? "INTERRUPTED" : run.status;
   const busy = status === "QUEUED" || status === "RUNNING";
@@ -546,13 +524,13 @@ const RunOutcomeNotice: React.FC<{ run: RunSummaryView; onRetry?: () => void }> 
   return (
     <div
       role={busy ? "status" : "note"}
-      className="mt-1 min-w-0 rounded-xl border border-dashed border-amber-200 bg-amber-50/70 px-3 py-2 text-xs"
+      className="mt-1.5 min-w-0 rounded-xl border border-amber-200 bg-amber-50/80 px-3.5 py-2.5 text-xs"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-medium text-slate-700">{busy ? "本次回答" : "这次没有拿到回答"}</span>
-        <span className={RUN_STATUS_CLASSES[status] ?? "text-slate-600"}>{RUN_STATUS_LABELS[status] ?? status}</span>
+        <span className="font-semibold text-ink">{busy ? "本次回答" : "这次没有拿到回答"}</span>
+        <span className={`font-semibold ${RUN_STATUS_CLASSES[status] ?? "text-slate-600"}`}>{RUN_STATUS_LABELS[status] ?? status}</span>
         {typeof run.durationMs === "number" && run.durationMs > 0 && (
-          <span className="text-slate-400">耗时 {(run.durationMs / 1000).toFixed(1)} s</span>
+          <span className="font-mono text-slate-500">耗时 {(run.durationMs / 1000).toFixed(1)} s</span>
         )}
       </div>
       <p className={(busy ? "mt-1" : "mt-1.5") + " leading-5 text-slate-600"}>
@@ -567,7 +545,6 @@ const RunOutcomeNotice: React.FC<{ run: RunSummaryView; onRetry?: () => void }> 
   );
 };
 
-/** 读取状态提示：失败时给重试，不把故障解释成「没有记录」。 */
 const RunLoadNotice: React.FC<{
   message: string;
   onRetry: () => void;
@@ -576,8 +553,8 @@ const RunLoadNotice: React.FC<{
   <div
     role={stale ? "status" : "alert"}
     className={stale
-      ? "mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-amber-200 bg-amber-50/60 px-3 py-2 text-xs text-slate-600"
-      : "mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-rose-200 bg-rose-50/60 px-3 py-2 text-xs text-slate-700"}
+      ? "mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/70 px-3.5 py-2 text-xs text-slate-700"
+      : "mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-rose-200 bg-rose-50/70 px-3.5 py-2 text-xs text-slate-700"}
   >
     <span className="min-w-0 flex-1">
       {stale ? `执行记录尚未更新：${message}` : `执行记录暂时无法读取：${message}`}
@@ -588,7 +565,6 @@ const RunLoadNotice: React.FC<{
   </div>
 );
 
-/** The timer measures elapsed waiting only; it never predicts provider progress. */
 const ElapsedWait: React.FC<{ startedAt: number }> = ({ startedAt }) => {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -597,7 +573,7 @@ const ElapsedWait: React.FC<{ startedAt: number }> = ({ startedAt }) => {
   }, []);
   const seconds = Math.max(0, Math.floor((now - startedAt) / 1000));
   return (
-    <span className="text-xs text-slate-500" data-wait-seconds={seconds} aria-live="off">
+    <span className="font-mono text-xs text-slate-500" data-wait-seconds={seconds} aria-live="off">
       已等待 {seconds} 秒{seconds >= 10 ? " · 仍在处理中，可停止或稍后回来查看" : ""}
     </span>
   );
@@ -628,17 +604,16 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
 
   const [newAnswerId, setNewAnswerId] = useState<string | null>(null);
   const [citedSource, setCitedSource] = useState<AnswerCitation | null>(null);
-  // 打开引用预览前记录触发元素：抽屉关闭（含 Esc）后焦点必须回到它。
   const previewTriggerRef = useRef<HTMLElement | null>(null);
   const focusRestoreTimerRef = useRef<number | null>(null);
+
   const openCitation = useCallback((citation: AnswerCitation) => {
-    // A new source may open before the previous drawer has restored focus.
-    // Its pending callback must not move focus outside the new dialog.
     if (focusRestoreTimerRef.current !== null) window.clearTimeout(focusRestoreTimerRef.current);
     focusRestoreTimerRef.current = null;
     previewTriggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setCitedSource(citation);
   }, []);
+
   const closeCitation = useCallback(() => {
     setCitedSource(null);
     const trigger = previewTriggerRef.current;
@@ -649,25 +624,22 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
       if (trigger?.isConnected) trigger.focus();
     }, 60);
   }, []);
+
   useEffect(() => () => {
     if (focusRestoreTimerRef.current !== null) window.clearTimeout(focusRestoreTimerRef.current);
   }, []);
 
-  // 数据与请求状态分开保存：失败不清空已取得的运行记录。
   const [runs, setRuns] = useState<RunSummaryView[]>([]);
   const [runLoad, setRunLoad] = useState<"idle" | "loading" | "ready" | "error">(sessionId ? "loading" : "idle");
   const [runError, setRunError] = useState("");
   const [runStale, setRunStale] = useState(false);
 
-  // 初始状态已经按 sessionId 决定（聊天页对整个会话子树做了 key 重挂载），
-  // 所以这里不需要「切换会话时同步清空」的 effect：新会话用的是全新的 state。
   const loadRuns = useCallback(async () => {
     if (!sessionId) return;
     const seq = ++requestSeqRef.current;
     const targetSession = sessionId;
     try {
       const response = await listSessionRuns(targetSession);
-      // 切换会话后旧请求返回：丢弃，不更新当前视图。
       if (seq !== requestSeqRef.current || targetSession !== sessionId) return;
       const nextRuns = Array.isArray(response?.runs) ? response.runs : [];
       hadSuccessfulReadRef.current = true;
@@ -696,7 +668,6 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
 
   useEffect(() => {
     if (!sessionId) return;
-    // 放进定时器回调里触发：读取本身是异步的，失败也不会同步改状态。
     const timer = window.setTimeout(() => { void loadRuns(); }, 0);
     return () => {
       window.clearTimeout(timer);
@@ -704,7 +675,6 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
     };
   }, [loadRuns, messages.length, sessionId, refreshVersion]);
 
-  // 轮询只用于可见页面里的活动运行；终态停止。
   const hasActiveRun = runs.some((run) => run.status === "QUEUED" || run.status === "RUNNING");
   useEffect(() => {
     if (!sessionId || !hasActiveRun) return;
@@ -741,7 +711,6 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
     return container.querySelector<HTMLElement>(`[data-answer-id="${messageId}"]`);
   }, []);
 
-  // 用户滚动：上滚或选择文字时不再跟随本轮，回到接近底部时恢复跟随。
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -778,9 +747,6 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
     };
   }, []);
 
-  // Track real answer IDs, not the last message's role: a tool acknowledgement often
-  // follows the final answer in the same snapshot. Mark IDs only after the scroll
-  // callback actually runs, so a replaced render cannot silently cancel the anchor.
   useEffect(() => {
     if (!autoScroll || messages.length === 0) return;
     const timer = requestAnimationFrame(() => {
@@ -810,7 +776,6 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
     return () => cancelAnimationFrame(timer);
   }, [answerElement, autoScroll, messages, scrollToBottom, scrollToElementTop]);
 
-  // 活动状态出现时，仍在跟随的访客能看到状态本身。
   useEffect(() => {
     if (!autoScroll || !displayAgentStatus || !followRef.current) return;
     const timer = requestAnimationFrame(scrollToBottom);
@@ -843,70 +808,93 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
     !displayAgentStatus && followUpPrompts.length > 0;
 
   return (
-    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-paper">
       <div
         ref={scrollContainerRef}
-        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-8 sm:py-5 lg:px-12"
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-5 sm:px-8 sm:py-6"
       >
-        {sessionId && runLoad === "error" && (
-          <RunLoadNotice message={runError || "暂时无法读取执行记录"} onRetry={retryRuns} />
-        )}
-        {sessionId && runLoad === "ready" && runStale && (
-          <RunLoadNotice message={runError || "网络或服务暂时不可用"} onRetry={retryRuns} stale />
-        )}
+        <div className="mx-auto w-full max-w-4xl">
+          {sessionId && runLoad === "error" && (
+            <RunLoadNotice message={runError || "暂时无法读取执行记录"} onRetry={retryRuns} />
+          )}
+          {sessionId && runLoad === "ready" && runStale && (
+            <RunLoadNotice message={runError || "网络或服务暂时不可用"} onRetry={retryRuns} stale />
+          )}
 
-        {turns.map((turn, turnIndex) => {
-          const run = turn.run;
-          const declaredRunId = messageRunId(turn.answers[0]) ?? messageRunId(turn.question);
-          const answerlessRun = run && !run.answerMessageId && turn.answers.length === 0 ? run : undefined;
-          const toolCalls = turn.traceMessages.flatMap((answer) => answer.metadata?.toolCalls ?? []);
-          const toolResponses = turn.tools
-            .map((message) => message.metadata?.toolResponse)
-            .filter((response): response is ToolResponse => !!response);
-          const busyRunStatus: RunStatus | null =
-            run && (run.status === "QUEUED" || run.status === "RUNNING") ? run.status : null;
-          const showProcess = !!run || toolCalls.length > 0 || toolResponses.length > 0;
-          const runConfirmedMissing = !!sessionId && runLoad === "ready" && !runStale && !run;
-          const missingAssociatedRun = !!sessionId && runLoad === "ready" && !runStale && !run && !!declaredRunId;
+          {turns.map((turn, turnIndex) => {
+            const run = turn.run;
+            const declaredRunId = messageRunId(turn.answers[0]) ?? messageRunId(turn.question);
+            const answerlessRun = run && !run.answerMessageId && turn.answers.length === 0 ? run : undefined;
+            const toolCalls = turn.traceMessages.flatMap((answer) => answer.metadata?.toolCalls ?? []);
+            const toolResponses = turn.tools
+              .map((message) => message.metadata?.toolResponse)
+              .filter((response): response is ToolResponse => !!response);
+            const busyRunStatus: RunStatus | null =
+              run && (run.status === "QUEUED" || run.status === "RUNNING") ? run.status : null;
+            const showProcess = !!run || toolCalls.length > 0 || toolResponses.length > 0;
+            const runConfirmedMissing = !!sessionId && runLoad === "ready" && !runStale && !run;
+            const missingAssociatedRun = !!sessionId && runLoad === "ready" && !runStale && !run && !!declaredRunId;
 
-          return (
-            <div key={turn.key} className="mb-5 min-w-0">
-              {turn.systems.map((message) => (
-                <div key={message.id} className="mb-2 flex justify-center">
-                  <div className="flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">
-                    <RobotOutlined />
-                    <span className="break-words">{message.content}</span>
-                  </div>
-                </div>
-              ))}
-
-              {turn.question && (
-                <div className="flex flex-col items-end gap-1">
-                  <Bubble content={<span className="block min-w-0 break-words">{turn.question.content}</span>} placement="end" />
-                  {answerlessRun && (
-                    <div className="w-full max-w-3xl">
-                      <RunOutcomeNotice
-                        run={answerlessRun}
-                        onRetry={onAskFollowUp && turn.question ? () => void onAskFollowUp(turn.question!.content) : undefined}
-                      />
+            return (
+              <div key={turn.key} className="mb-6 min-w-0">
+                {turn.systems.map((message) => (
+                  <div key={message.id} className="mb-3 flex justify-center">
+                    <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 shadow-card">
+                      <RobotOutlined className="text-accent" />
+                      <span className="break-words">{message.content}</span>
                     </div>
-                  )}
-                  {missingAssociatedRun && (
-                    <p className="text-xs text-amber-700">未能读取这条问题对应的执行记录。</p>
-                  )}
-                </div>
-              )}
+                  </div>
+                ))}
 
-              {turn.answers.map((answer) => {
-                const citations = answer.metadata?.citations ?? [];
-                const answerRun = run;
-                const failedRun = answerRun && ["FAILED", "CANCELLED", "INTERRUPTED"].includes(
-                  answerRun.interrupted ? "INTERRUPTED" : answerRun.status,
-                ) ? answerRun : undefined;
-                return (
-                  <div key={answer.id} data-answer-id={answer.id} className="mt-2 min-w-0">
-                    <Bubble
-                      content={(
+                {turn.question && (
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-ink px-4 py-2.5 text-sm leading-6 text-white shadow-card sm:max-w-[75%]">
+                      <span className="block min-w-0 break-words">{turn.question.content}</span>
+                    </div>
+                    {answerlessRun && (
+                      <div className="w-full">
+                        <RunOutcomeNotice
+                          run={answerlessRun}
+                          onRetry={onAskFollowUp && turn.question ? () => void onAskFollowUp(turn.question!.content) : undefined}
+                        />
+                      </div>
+                    )}
+                    {missingAssociatedRun && (
+                      <p className="text-xs text-amber-700">未能读取这条问题对应的执行记录。</p>
+                    )}
+                  </div>
+                )}
+
+                {turn.answers.map((answer) => {
+                  const citations = answer.metadata?.citations ?? [];
+                  const answerRun = run;
+                  const failedRun = answerRun && ["FAILED", "CANCELLED", "INTERRUPTED"].includes(
+                    answerRun.interrupted ? "INTERRUPTED" : answerRun.status,
+                  ) ? answerRun : undefined;
+                  return (
+                    <div key={answer.id} data-answer-id={answer.id} className="mt-3 min-w-0">
+                      <article className="arch-card p-4 sm:p-5">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5 text-xs">
+                          <div className="flex items-center gap-2">
+                            {citations.length > 0 ? (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-verified-border bg-verified-soft px-2.5 py-0.5 font-semibold text-verified">
+                                <CheckCircleOutlined />
+                                来源已核验 · {citations.length} 处依据
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 font-semibold text-slate-600">
+                                <RobotOutlined className="text-accent" />
+                                问档答复
+                              </span>
+                            )}
+                          </div>
+                          {answerRun && (
+                            <span className="font-mono text-[11px] text-slate-400">
+                              耗时 {formatDuration(answerRun.durationMs)}
+                            </span>
+                          )}
+                        </div>
+
                         <div className="w-full min-w-0 break-words [&_a]:break-all">
                           {answer.content && <AnswerBody messageId={answer.id} content={answer.content} />}
                           {citations.length > 0 && <CitationEntry citations={citations} onOpen={openCitation} />}
@@ -914,13 +902,13 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
                             const status = failedRun.interrupted ? "INTERRUPTED" : failedRun.status;
                             const failure = failureText(failedRun.errorCode, status);
                             return (
-                              <div className="mt-2 rounded-lg border border-dashed border-amber-200 bg-amber-50/70 px-2.5 py-2 text-xs">
-                                <p className="font-medium leading-5 text-slate-700">{failure.title}</p>
+                              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/75 px-3 py-2.5 text-xs">
+                                <p className="font-semibold leading-5 text-ink">{failure.title}</p>
                                 <p className="mt-0.5 leading-5 text-slate-600">{failure.hint}</p>
                                 {failure.retryable && onAskFollowUp && turn.question && (
                                   <Button
                                     size="small"
-                                    className="mt-1.5"
+                                    className="mt-2"
                                     icon={<ReloadOutlined />}
                                     onClick={() => void onAskFollowUp(turn.question!.content)}
                                   >
@@ -934,73 +922,68 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
                             <p className="mt-2 text-xs text-slate-400">这条历史消息没有执行记录</p>
                           )}
                         </div>
-                      )}
-                      placement="start"
-                    />
+                      </article>
+                    </div>
+                  );
+                })}
+
+                {showProcess && (
+                  <div className="w-full min-w-0">
+                    <ProcessDisclosure run={run} sessionId={sessionId} toolCalls={toolCalls} toolResponses={toolResponses} />
                   </div>
-                );
-              })}
+                )}
 
-              {showProcess && (
-                <div className="w-full min-w-0 max-w-3xl">
-                  <ProcessDisclosure run={run} sessionId={sessionId} toolCalls={toolCalls} toolResponses={toolResponses} />
-                </div>
-              )}
+                {answerlessRun && busyRunStatus && !displayAgentStatus && (
+                  <p className="mt-1.5 text-xs font-medium text-accent" role="status">
+                    本轮仍在{RUN_STATUS_LABELS[busyRunStatus]}，刷新页面不会中断它。
+                  </p>
+                )}
 
-              {/* 有运行记录但仍在执行、又没有答案消息时，把活动状态放在本轮下面 */}
-              {answerlessRun && busyRunStatus && !displayAgentStatus && (
-                <p className="mt-1 text-xs text-sky-700" role="status">
-                  本轮仍在{RUN_STATUS_LABELS[busyRunStatus]}，刷新页面不会中断它。
-                </p>
-              )}
+                {turnIndex === turns.length - 1 && showFollowUps && (
+                  <div className="mt-3 flex flex-wrap gap-2" aria-label="相关追问">
+                    {followUpPrompts.slice(0, 2).map((prompt) => (
+                      <button
+                        key={prompt}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void onAskFollowUp?.(prompt)}
+                        className="min-h-10 max-w-full cursor-pointer rounded-xl border border-dashed border-slate-300 bg-white px-3.5 py-2 text-left text-xs font-semibold text-slate-700 shadow-card transition-all duration-150 hover:-translate-y-px hover:border-accent hover:bg-accent-soft hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        ↳ {prompt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-              {turnIndex === turns.length - 1 && showFollowUps && (
-                <div className="mt-3 flex flex-wrap gap-2" aria-label="相关追问">
-                  {followUpPrompts.slice(0, 2).map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void onAskFollowUp?.(prompt)}
-                      className="min-h-11 max-w-full rounded-xl border border-dashed border-sketch bg-white/80 px-3 py-2 text-left text-xs font-semibold text-pencil transition-[background-color,border-color,transform] duration-150 ease-out hover:-translate-y-px hover:border-pencil/50 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {displayAgentStatus && (
-          <div className="mb-3" role="status" aria-live="polite">
-            <Bubble
-              content={(
-                <span className="flex flex-wrap items-center gap-2">
-                  <span className="animate-pulse font-semibold text-sketch0">✨ {statusLabel}</span>
-                  {agentStatusText && <span className="break-words text-gray-600">{agentStatusText}</span>}
-                  {waitStartedAt != null && <ElapsedWait key={waitStartedAt} startedAt={waitStartedAt} />}
+          {displayAgentStatus && (
+            <div className="mb-4" role="status" aria-live="polite">
+              <div className="arch-card inline-flex max-w-full flex-wrap items-center gap-2.5 px-4 py-3 text-sm">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-accent">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+                  {statusLabel}
                 </span>
-              )}
-              placement="start"
-            />
-          </div>
-        )}
+                {agentStatusText && <span className="break-words text-xs text-slate-600">{agentStatusText}</span>}
+                {waitStartedAt != null && <ElapsedWait key={waitStartedAt} startedAt={waitStartedAt} />}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {newAnswerId && (
         <button
           type="button"
           onClick={jumpToNewAnswer}
-          className="absolute bottom-3 left-1/2 z-10 flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full border border-sketch bg-white px-4 py-2 text-xs font-semibold text-ink shadow-doodle transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5"
+          className="absolute bottom-3 left-1/2 z-10 flex min-h-10 -translate-x-1/2 cursor-pointer items-center gap-1.5 rounded-full border border-accent-border bg-white px-4 py-2 text-xs font-semibold text-accent shadow-card-hover transition-transform hover:-translate-y-0.5"
         >
           有新回答到达
           <DownOutlined />
         </button>
       )}
 
-      {/* 引用原文：使用当前构建的授权原文接口，关闭即清理请求 */}
       {citedSource && (
         <DocumentPreviewDrawer
           document={{ id: citedSource.source.documentId, filename: citedSource.source.documentName }}

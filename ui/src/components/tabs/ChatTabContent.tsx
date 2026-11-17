@@ -1,6 +1,6 @@
 ﻿import React, { useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Button, Divider, Popconfirm } from "antd";
+import { Button, Popconfirm } from "antd";
 import {
   PlusOutlined,
   MessageOutlined,
@@ -19,7 +19,6 @@ const ChatTabContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   const agentCatalog = useAgents();
   const { agents } = agentCatalog;
 
-  // 创建 agentId 到 agent 的映射
   const agentMap = useMemo(() => {
     const map = new Map<string, string>();
     agents.forEach((agent) => {
@@ -47,7 +46,6 @@ const ChatTabContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
     }
   };
 
-  // 格式化标题显示
   const getDisplayTitle = (session: { title?: string; agentId: string | null }) => {
     if (session.title) {
       return session.title;
@@ -57,67 +55,90 @@ const ChatTabContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col gap-3">
       <Button
-        color="geekblue"
-        variant="filled"
+        type="primary"
         icon={<PlusOutlined />}
         onClick={handleCreateNewChat}
         className="w-full"
       >
-        新聊天
+        发起新提问
       </Button>
-      {IS_PUBLIC_DEMO && <p className="mt-3 text-xs leading-5 text-slate-500">仅显示当前浏览器的个人体验记录。清除站点数据后将无法找回。</p>}
-      <Divider />
-      <div className="flex-1 min-h-0 overflow-y-auto bg-sketch/60 rounded-2xl">
+      {IS_PUBLIC_DEMO && (
+        <p className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[11.5px] leading-5 text-slate-500">
+          仅展示当前浏览器的个人体验记录（Cookie 隔离）。清除站点数据后不可找回。
+        </p>
+      )}
+      <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-full text-pencil/40">
-            <p className="text-sm">加载中...</p>
+          <div className="flex h-full items-center justify-center text-xs text-slate-400">
+            加载中…
           </div>
         ) : chatSessions.length === 0 ? (
-          <div className="px-3 py-4 text-xs leading-5 text-pencil/50">
-            还没有记录。第一次提问后，这里会出现只有你能看到的体验记录。
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-3 py-4 text-xs leading-6 text-slate-500">
+            还没有个人记录。在右侧点击推荐问题或直接提问后，你的会话会保存在这里。
           </div>
         ) : (
-          <div className="space-y-1.5 p-1.5">
-            {chatSessions.map((session) => (
-              <div
-                key={session.id}
-                onClick={() => handleSelectChatSession(session.id)}
-                className="group relative w-full cursor-pointer rounded-xl border border-transparent bg-white px-3 py-2.5 shadow-[2px_2px_0_0_rgba(43, 39, 36,0.08)] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-sketch hover:shadow-[3px_3px_0_0_rgba(43, 39, 36,0.16)]"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sketch to-sketch flex items-center justify-center shrink-0 text-lg mt-0.5 text-ink transition-transform duration-200 group-hover:scale-110 group-hover:-rotate-6">
-                    <MessageOutlined />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-ink truncate">
-                      {getDisplayTitle(session)}
-                    </div>
-                    <SessionAgentLabel agentId={session.agentId} catalog={agentCatalog} compact className="mt-1 text-xs" />
-                  </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Popconfirm
-                      title="确定要删除这条聊天记录吗？"
-                      description="删除后将无法恢复"
-                      onConfirm={() => handleDeleteChatSession(session.id)}
-                      okText="确定"
-                      cancelText="取消"
+          <div className="space-y-1.5">
+            {chatSessions.map((session) => {
+              const active = pathname === `/chat/${session.id}`;
+              return (
+                <div
+                  key={session.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleSelectChatSession(session.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleSelectChatSession(session.id);
+                    }
+                  }}
+                  className={`group relative w-full cursor-pointer rounded-xl border px-3 py-2.5 transition-all duration-150 ${
+                    active
+                      ? "border-accent bg-accent-soft/70 shadow-card"
+                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div
+                      className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-xs ${
+                        active
+                          ? "border-accent-border bg-white text-accent"
+                          : "border-slate-200 bg-slate-50 text-slate-500"
+                      }`}
                     >
-                      <Button
-                        type="text"
-                        size="small"
-                        icon={<DeleteOutlined />}
-                        aria-label="删除聊天记录"
-                        className="opacity-60 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shrink-0"
-                        onClick={(e) => e.stopPropagation()}
-                        danger
-                      />
-                    </Popconfirm>
+                      <MessageOutlined />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-semibold leading-5 text-ink">
+                        {getDisplayTitle(session)}
+                      </div>
+                      <SessionAgentLabel agentId={session.agentId} catalog={agentCatalog} compact className="mt-0.5 text-[11px]" />
+                    </div>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Popconfirm
+                        title="确定要删除这条聊天记录吗？"
+                        description="删除后将无法恢复"
+                        onConfirm={() => handleDeleteChatSession(session.id)}
+                        okText="确定"
+                        cancelText="取消"
+                      >
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          aria-label="删除聊天记录"
+                          className="shrink-0 opacity-60 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                          onClick={(e) => e.stopPropagation()}
+                          danger
+                        />
+                      </Popconfirm>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

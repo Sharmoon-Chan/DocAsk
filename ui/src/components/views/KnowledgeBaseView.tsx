@@ -16,6 +16,8 @@ import {
   Tooltip,
 } from "antd";
 import {
+  ArrowLeftOutlined,
+  ArrowRightOutlined,
   BookOutlined,
   UploadOutlined,
   DeleteOutlined,
@@ -56,7 +58,6 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // 查找当前知识库的详细信息
   const currentKnowledgeBase = useMemo(() => {
     if (!knowledgeBaseId) return null;
     return (
@@ -82,7 +83,6 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
     }
   };
 
-  // 处理文件上传
   const handleUpload: UploadProps["customRequest"] = async (options) => {
     const { file, onSuccess, onError } = options;
 
@@ -95,7 +95,6 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
 
     try {
       await uploadDocument(knowledgeBaseId, file as File);
-      // 上传返回的是“已受理”：文件已保存、任务已排队，索引在后台完成前仍不可检索。
       notify.success("文档已受理，正在后台索引");
       await refreshDocuments();
       onSuccess?.(file);
@@ -107,7 +106,6 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
     }
   };
 
-  /** 重试失败的导入：服务端再校验 KB 写权限，并保证重复点击不会生成并行任务。 */
   const handleRetry = async (documentId: string) => {
     if (retrying) return;
     setRetrying(documentId);
@@ -121,7 +119,6 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
     }
   };
 
-  // 格式化文件大小
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return "0 B";
     const k = 1024;
@@ -130,26 +127,27 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   };
 
-  // 表格列定义
   const columns: TableColumnsType<DocumentWithIngestion> = [
     {
       title: "文件名",
       dataIndex: "filename",
       key: "filename",
-      width: 240,
+      width: 260,
       render: (text: string, record: DocumentWithIngestion) => (
         <div className="flex min-w-0 items-start gap-2">
-          <FileOutlined className="mt-1 shrink-0 text-slate-400" />
+          <FileOutlined className="mt-1 shrink-0 text-accent" />
           {isMarkdown(text) ? (
             <button
               type="button"
-              className="min-w-0 cursor-pointer break-all text-left text-indigo-600 hover:underline"
+              className="min-w-0 cursor-pointer break-all text-left font-medium text-accent hover:underline"
               aria-label={`预览 ${text}`}
               onClick={() => setPreviewDocument(record)}
             >
               {text}
             </button>
-          ) : <span className="min-w-0 break-all">{text}</span>}
+          ) : (
+            <span className="min-w-0 break-all text-ink">{text}</span>
+          )}
         </div>
       ),
     },
@@ -157,8 +155,9 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
       title: "类型",
       dataIndex: "filetype",
       key: "filetype",
-      width: 100,
+      width: 96,
       responsive: ["lg"],
+      render: (value: string) => <span className="font-mono text-xs text-slate-500">{value}</span>,
     },
     {
       title: "大小",
@@ -166,7 +165,7 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
       key: "size",
       width: 100,
       responsive: ["lg"],
-      render: (size: number) => formatFileSize(size),
+      render: (size: number) => <span className="font-mono text-xs text-slate-500">{formatFileSize(size)}</span>,
     },
     {
       title: "操作",
@@ -183,17 +182,19 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
           >
             预览
           </Button>
-          {!readOnly && !record.readOnly && <Popconfirm
-            title="确定要删除这个文档吗？"
-            description="删除后将无法恢复"
-            onConfirm={() => deleteDocument(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="text" danger icon={<DeleteOutlined />} size="small">
-              删除
-            </Button>
-          </Popconfirm>}
+          {!readOnly && !record.readOnly && (
+            <Popconfirm
+              title="确定要删除这个文档吗？"
+              description="删除后将无法恢复"
+              onConfirm={() => deleteDocument(record.id)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="text" danger icon={<DeleteOutlined />} size="small">
+                删除
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -240,31 +241,61 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
     },
   ];
 
-  // 未选择知识库时的提示
   if (loadingKnowledgeBases) {
-    return <div className="flex h-full items-center justify-center"><Spin /></div>;
+    return <div className="flex h-full items-center justify-center bg-paper"><Spin /></div>;
   }
 
   if (IS_PUBLIC_DEMO && !knowledgeBaseId) {
     return (
-      <div className="h-full overflow-y-auto bg-white p-5 sm:p-8">
-        <div className="mx-auto max-w-4xl">
-          <Tag color="geekblue">公开资料</Tag>
-          <Title level={2} className="mt-3!">公开知识库</Title>
-          <Paragraph type="secondary">浏览公开项目与技术资料，在聊天中检索并查看文档来源。</Paragraph>
-          {knowledgeBases.length === 0 ? <Empty description="公开知识库准备中" /> : (
-            <div className="mt-6 grid gap-4">
+      <div className="h-full overflow-y-auto bg-paper p-5 sm:p-8">
+        <div className="mx-auto max-w-5xl">
+          <div className="border-b border-slate-200 pb-5">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-border bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
+              <GlobalOutlined /> 公开资料库 · 正文分块索引
+            </span>
+            <Title level={2} className="mt-3! mb-2! tracking-tight text-ink!">
+              公开知识库
+            </Title>
+            <Paragraph className="mb-0! max-w-2xl text-sm leading-6 text-ink-soft">
+              浏览当前挂载的公开项目资料与高频技术学习资料，可直接阅读 Markdown 原文与源码，或在体验台中发起带引用检索的问答。
+            </Paragraph>
+          </div>
+
+          {knowledgeBases.length === 0 ? (
+            <div className="py-16"><Empty description="公开知识库准备中" /></div>
+          ) : (
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
               {knowledgeBases.map((knowledgeBase) => (
-                <Card key={knowledgeBase.knowledgeBaseId}>
-                  <div className="flex items-start gap-4">
-                    <BookOutlined className="mt-1 text-2xl text-indigo-500" />
+                <div
+                  key={knowledgeBase.knowledgeBaseId}
+                  className="arch-card arch-card-interactive flex flex-col justify-between p-5"
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-accent-border bg-accent-soft text-xl text-accent">
+                      <BookOutlined />
+                    </div>
                     <div className="min-w-0 flex-1">
-                      <Title level={4}>{knowledgeBase.name}</Title>
-                      <Paragraph type="secondary">{knowledgeBase.description}</Paragraph>
-                      <Button onClick={() => navigate(`/knowledge-base/${knowledgeBase.knowledgeBaseId}`)}>查看文档列表</Button>
+                      <span className="inline-block rounded bg-slate-100 px-2 py-0.5 font-mono text-[10.5px] font-semibold text-slate-600">
+                        公开资料 · 只读
+                      </span>
+                      <Title level={4} className="mt-1.5! mb-1.5! text-base! font-bold! text-ink!">
+                        {knowledgeBase.name}
+                      </Title>
+                      <Paragraph className="mb-0! text-xs leading-5 text-ink-soft">
+                        {knowledgeBase.description}
+                      </Paragraph>
                     </div>
                   </div>
-                </Card>
+                  <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <Button
+                      type="primary"
+                      size="small"
+                      onClick={() => navigate(`/knowledge-base/${knowledgeBase.knowledgeBaseId}`)}
+                    >
+                      查看文档列表 <ArrowRightOutlined />
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -275,16 +306,14 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
 
   if (!knowledgeBaseId) {
     return (
-      <div className="flex flex-col h-full items-center justify-center p-6">
+      <div className="flex h-full flex-col items-center justify-center bg-paper p-6">
         <Empty
-          image={<BookOutlined className="text-6xl text-gray-300" />}
+          image={<BookOutlined className="text-5xl text-slate-300" />}
           description={
             <div className="mt-4">
-              <Title level={4} type="secondary">
-                未选择知识库
-              </Title>
+              <Title level={4} type="secondary">未选择知识库</Title>
               <Text type="secondary" className="text-sm">
-                请从左侧知识库列表中选择一个知识库查看详情
+                请从左侧工作区侧栏选择一个知识库查看详情
               </Text>
             </div>
           }
@@ -293,16 +322,13 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
     );
   }
 
-  // 知识库不存在
   if (!currentKnowledgeBase) {
     return (
-      <div className="flex flex-col h-full items-center justify-center p-6">
+      <div className="flex h-full flex-col items-center justify-center bg-paper p-6">
         <Empty
           description={
             <div className="mt-4">
-              <Title level={4} type="secondary">
-                知识库不存在
-              </Title>
+              <Title level={4} type="secondary">知识库不存在</Title>
               <Text type="secondary" className="text-sm">
                 该知识库已删除，或不属于当前账号。
               </Text>
@@ -313,76 +339,115 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
     );
   }
 
-  // 显示知识库详情和文档列表
   return (
-    <div className="flex min-w-0 flex-col h-full p-5 sm:p-8 overflow-y-auto">
-      <div className="min-w-0 max-w-6xl w-full mx-auto">
-        <div className="mb-3">
-          <Card>
-            <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-4 sm:flex sm:flex-wrap">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-gradient-to-br from-blue-200 to-purple-200 flex items-center justify-center text-3xl shrink-0">
-                <BookOutlined />
-              </div>
-              <div className="min-w-0 flex-1">
-                <Title level={3} className="mb-2 break-words">
-                  {currentKnowledgeBase.name}
-                </Title>
-                {currentKnowledgeBase.description && (
-                  <Paragraph className="text-gray-600 mb-0 break-words">
-                    {currentKnowledgeBase.description}
-                  </Paragraph>
-                )}
-                <Tag className="max-w-full whitespace-normal!" color={isPublic ? "geekblue" : "green"} icon={isPublic ? <GlobalOutlined /> : <LockOutlined />}>
-                  {isPublic ? "公开演示库" : "私有 · 仅当前账号可见"}
-                </Tag>
-              </div>
-              {!readOnly && <Button className="col-span-2 justify-self-start sm:shrink-0" danger icon={<DeleteOutlined />} disabled={uploading || deleting}
-                onClick={() => setDeleteOpen(true)}>删除知识库</Button>}
-            </div>
-          </Card>
-        </div>
-        {/* 知识库信息卡片 */}
-
-        {readOnly && (
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
-            <span className="flex-1 text-sm leading-6 text-slate-600">点击文件名阅读原文，也可以在对话中检索资料与来源。</span>
-            <Button type="primary" icon={<MessageOutlined />} onClick={() => navigate("/chat", {
-              state: { suggestedPrompt: `请检索公开知识库「${currentKnowledgeBase.name}」，介绍问档 DocAsk 的技术架构与检索流程，并注明文档来源。` },
-            })}>用这个知识库提问</Button>
+    <div className="flex h-full min-w-0 flex-col overflow-y-auto bg-paper p-5 sm:p-8">
+      <div className="mx-auto w-full max-w-5xl min-w-0">
+        {IS_PUBLIC_DEMO && (
+          <div className="mb-3">
+            <Button
+              type="text"
+              size="small"
+              icon={<ArrowLeftOutlined />}
+              onClick={() => navigate("/knowledge-base")}
+            >
+              返回公开知识库列表
+            </Button>
           </div>
         )}
 
-        {!readOnly && <div className="mb-3">
-          {/* 上传文档区域 */}
-          <Card title="上传文档">
-            {isPublic && <Alert className="mb-4!" type="warning" showIcon title="此库用于公开演示，上传的文档对所有访客可见。" />}
-            <Upload
-              customRequest={handleUpload}
-              showUploadList={false}
-              accept=".md,.markdown"
-              disabled={uploading || deleting}
-            >
+        <div className="arch-card mb-4 p-5">
+          <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-4 sm:flex sm:flex-wrap">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-accent-border bg-accent-soft text-2xl text-accent sm:h-14 sm:w-14">
+              <BookOutlined />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                <Tag
+                  className="m-0! max-w-full whitespace-normal!"
+                  color={isPublic ? "cyan" : "green"}
+                  icon={isPublic ? <GlobalOutlined /> : <LockOutlined />}
+                >
+                  {isPublic ? "公开演示库" : "私有 · 仅当前账号可见"}
+                </Tag>
+              </div>
+              <Title level={3} className="mb-1! break-words text-ink!">
+                {currentKnowledgeBase.name}
+              </Title>
+              {currentKnowledgeBase.description && (
+                <Paragraph className="mb-0! break-words text-sm leading-6 text-ink-soft">
+                  {currentKnowledgeBase.description}
+                </Paragraph>
+              )}
+            </div>
+            {!readOnly && (
               <Button
-                type="primary"
-                icon={<UploadOutlined />}
-                loading={uploading}
-                size="large"
+                className="col-span-2 justify-self-start sm:shrink-0"
+                danger
+                icon={<DeleteOutlined />}
+                disabled={uploading || deleting}
+                onClick={() => setDeleteOpen(true)}
               >
-                选择文件上传
+                删除知识库
               </Button>
-            </Upload>
-            <Text type="secondary" className="block mt-2 text-xs">
-              支持格式: Markdown
-            </Text>
-          </Card>
-        </div>}
+            )}
+          </div>
+        </div>
 
-        <div className="mb-3">
-          {/* 文档列表 */}
+        {readOnly && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-accent-border bg-accent-soft/75 p-4">
+            <span className="flex-1 text-sm leading-6 text-ink-soft">
+              点击任意 Markdown 文件名阅读原文与源码，也可以直接使用此知识库提问并核验来源位置。
+            </span>
+            <Button
+              type="primary"
+              icon={<MessageOutlined />}
+              onClick={() => navigate("/chat", {
+                state: { suggestedPrompt: `请检索公开知识库「${currentKnowledgeBase.name}」，介绍问档 DocAsk 的技术架构与检索流程，并注明文档来源。` },
+              })}
+            >
+              用这个知识库提问
+            </Button>
+          </div>
+        )}
+
+        {!readOnly && (
+          <div className="mb-4">
+            <Card title="上传文档">
+              {isPublic && (
+                <Alert
+                  className="mb-4!"
+                  type="warning"
+                  showIcon
+                  title="此库用于公开演示，上传的文档对所有访客可见。"
+                />
+              )}
+              <Upload
+                customRequest={handleUpload}
+                showUploadList={false}
+                accept=".md,.markdown"
+                disabled={uploading || deleting}
+              >
+                <Button
+                  type="primary"
+                  icon={<UploadOutlined />}
+                  loading={uploading}
+                  size="large"
+                >
+                  选择文件上传
+                </Button>
+              </Upload>
+              <Text type="secondary" className="mt-2 block text-xs">
+                支持格式: UTF-8 Markdown（.md / .markdown，最大 2 MiB）
+              </Text>
+            </Card>
+          </div>
+        )}
+
+        <div className="mb-4">
           <Card title={`文档列表 (${documents.length})`}>
             {loading ? (
-              <div className="text-center py-8">
-                <Text type="secondary">加载中...</Text>
+              <div className="py-8 text-center">
+                <Text type="secondary">加载中…</Text>
               </div>
             ) : documents.length === 0 ? (
               <Empty
@@ -397,7 +462,6 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
                 scroll={{ x: 600 }}
                 pagination={{
                   pageSize: 10,
-                  // showSizeChanger: true,
                   showTotal: (total) => `共 ${total} 条`,
                 }}
               />
@@ -405,6 +469,7 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
           </Card>
         </div>
       </div>
+
       {previewDocument && (
         <DocumentPreviewDrawer
           key={previewDocument.id}
@@ -412,14 +477,26 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
           onClose={() => setPreviewDocument(null)}
         />
       )}
-      <Modal title="删除知识库" open={deleteOpen} okText="确认删除" cancelText="取消"
-        okButtonProps={{ danger: true }} confirmLoading={deleting}
-        closable={!deleting} maskClosable={!deleting}
+
+      <Modal
+        title="删除知识库"
+        open={deleteOpen}
+        okText="确认删除"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+        confirmLoading={deleting}
+        closable={!deleting}
+        maskClosable={!deleting}
         onCancel={() => { if (!deleting) setDeleteOpen(false); }}
-        onOk={() => { void handleDeleteKnowledgeBase(); }}>
+        onOk={() => { void handleDeleteKnowledgeBase(); }}
+      >
         <Paragraph>确定删除「{currentKnowledgeBase.name}」及其中的全部文档和检索索引？</Paragraph>
-        <Paragraph type="secondary">助手将解除对此知识库的关联。已保存的聊天记录会保留，此操作无法在页面中撤销。</Paragraph>
-        {isPublic && <Alert type="warning" showIcon title="删除后，所有访客都将无法访问此公开演示库。" />}
+        <Paragraph type="secondary">
+          助手将解除对此知识库的关联。已保存的聊天记录会保留，此操作无法在页面中撤销。
+        </Paragraph>
+        {isPublic && (
+          <Alert type="warning" showIcon title="删除后，所有访客都将无法访问此公开演示库。" />
+        )}
       </Modal>
     </div>
   );
@@ -427,7 +504,6 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
 
 const KnowledgeBaseView: React.FC = () => {
   const { knowledgeBaseId } = useParams<{ knowledgeBaseId?: string }>();
-  // Remount knowledge-base state so pending lists and previews cannot cross routes.
   return <KnowledgeBaseContent key={knowledgeBaseId ?? "index"} knowledgeBaseId={knowledgeBaseId} />;
 };
 

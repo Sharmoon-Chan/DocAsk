@@ -71,8 +71,8 @@ function AgentEditor({ onClose, createAgentHandle, updateAgentHandle, editingAge
   const currentUnavailable = editingAgent && !models.some((model) => model.id === editingAgent.model);
   return (
     <Modal open onCancel={onClose} title={editingAgent ? "编辑智能体" : "新建智能体助手"} width={800} centered closable={!saving} maskClosable={!saving} footer={<div className="flex justify-end gap-2"><Button onClick={onClose} disabled={saving}>取消</Button><Button type="primary" icon={<SaveOutlined />} loading={saving} disabled={loading || !loaded || models.length === 0} onClick={() => form.submit()}>{editingAgent ? "更新" : "保存"}</Button></div>}>
-      <div className="mb-4 flex gap-1 overflow-x-auto rounded-xl bg-slate-50 p-1" role="tablist" aria-label="助手设置">
-        {sections.map((section) => <button key={section.key} type="button" role="tab" aria-selected={selectedKey === section.key} className={`min-w-20 flex-1 cursor-pointer whitespace-nowrap rounded-lg px-2 py-2 text-sm ${selectedKey === section.key ? "bg-white font-medium text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-900"}`} onClick={() => setSelectedKey(section.key)}>{section.label}</button>)}
+      <div className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="助手设置">
+        {sections.map((section) => <button key={section.key} type="button" role="tab" aria-selected={selectedKey === section.key} className={`min-w-20 flex-1 cursor-pointer whitespace-nowrap rounded-lg px-2 py-2 text-sm transition-colors ${selectedKey === section.key ? "bg-white font-semibold text-accent shadow-card" : "text-slate-500 hover:text-ink"}`} onClick={() => setSelectedKey(section.key)}>{section.label}</button>)}
       </div>
       {error && <Alert type="error" showIcon title={error} className="mb-4!" action={!loaded ? <Button size="small" onClick={() => { setLoading(true); setError(""); setRetry((value) => value + 1); }}>重试</Button> : undefined} />}
       {!loading && loaded && models.length === 0 && <Alert type="warning" showIcon title="暂无已启用的对话模型，请联系管理员配置。" className="mb-4!" />}
@@ -96,7 +96,7 @@ function AgentEditor({ onClose, createAgentHandle, updateAgentHandle, editingAge
           </div>
           <div hidden={selectedKey !== "knowledge"}>
             <p className="mb-4 text-sm leading-6 text-slate-500">选择助手可检索的知识库，支持自己的资料和公开资料。</p>
-            {loadingKnowledgeBases ? <Spin /> : knowledgeBases.length === 0 ? <p className="py-10 text-center text-slate-400">暂无知识库，可先创建一个知识库。</p> : <Form.Item name="allowedKbs"><Checkbox.Group className="w-full!" options={knowledgeBases.map((kb) => ({ value: kb.knowledgeBaseId, label: <span className="block py-2"><span className="font-medium">{kb.name}</span><span className="ml-2 text-xs text-indigo-500">{kb.publicResource ? "公开演示库" : "我的私有库"}</span>{kb.description && <span className="mt-1 block text-xs text-slate-500">{kb.description}</span>}</span>, style: { display: "flex", width: "100%", marginBottom: 10 } }))} /></Form.Item>}
+            {loadingKnowledgeBases ? <Spin /> : knowledgeBases.length === 0 ? <p className="py-10 text-center text-slate-400">暂无知识库，可先创建一个知识库。</p> : <Form.Item name="allowedKbs"><Checkbox.Group className="w-full!" options={knowledgeBases.map((kb) => ({ value: kb.knowledgeBaseId, label: <span className="block py-2"><span className="font-medium text-ink">{kb.name}</span><span className="ml-2 text-xs font-semibold text-accent">{kb.publicResource ? "公开演示库" : "我的私有库"}</span>{kb.description && <span className="mt-1 block text-xs text-slate-500">{kb.description}</span>}</span>, style: { display: "flex", width: "100%", marginBottom: 10 } }))} /></Form.Item>}
           </div>
           <div hidden={selectedKey !== "tools"}>
             <p className="mb-4 text-sm leading-6 text-slate-500">知识检索、日期查询等基础能力已提供。可在下方添加当前账号可用的工具。</p>

@@ -1,6 +1,7 @@
 .document-preview-filename {
   overflow-wrap: anywhere;
   line-height: 1.5;
+  color: #0f172a;
 }
 
 .document-preview-toolbar {
@@ -10,7 +11,8 @@
   justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid #e2e8f0;
-  padding: 16px 24px;
+  background: #ffffff;
+  padding: 12px 24px;
 }
 
 .document-preview-scroll {
@@ -20,7 +22,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding: 24px;
+  padding: 20px 24px;
   background: #f8fafc;
 }
 
@@ -39,12 +41,13 @@
   max-width: 100%;
   margin: 0;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 28px;
-  background: #fff;
+  border-radius: 14px;
+  padding: 24px 28px;
+  background: #ffffff;
   color: #0f172a;
-  font-size: 15px;
+  font-size: 14.5px;
   line-height: 1.8;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .document-preview-markdown {
@@ -57,21 +60,22 @@
 .document-preview-markdown h4,
 .document-preview-markdown h5,
 .document-preview-markdown h6 {
-  margin: 28px 0 14px;
-  font-weight: 650;
-  line-height: 1.4;
+  margin: 26px 0 12px;
+  font-weight: 700;
+  line-height: 1.38;
+  color: #0f172a;
 }
 
 .document-preview-markdown h1 {
-  font-size: 1.85em;
+  font-size: 1.75em;
 }
 
 .document-preview-markdown h2 {
-  font-size: 1.45em;
+  font-size: 1.4em;
 }
 
 .document-preview-markdown h3 {
-  font-size: 1.2em;
+  font-size: 1.15em;
 }
 
 .document-preview-markdown > :first-child {
@@ -79,12 +83,12 @@
 }
 
 .document-preview-markdown blockquote {
-  margin: 20px 0;
-  border-left: 3px solid #a5b4fc;
+  margin: 18px 0;
+  border-left: 3px solid #0f766e;
   border-radius: 0 8px 8px 0;
-  padding: 12px 18px;
-  background: #eef2ff;
-  color: #475569;
+  padding: 10px 16px;
+  background: #f0fdfa;
+  color: #334155;
 }
 
 .document-preview-markdown img {
@@ -101,6 +105,8 @@
   overflow-wrap: normal;
   word-break: normal;
   tab-size: 4;
+  font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 13px;
 }
 
 .document-preview-markdown pre code,
@@ -111,17 +117,19 @@
 }
 
 .document-preview-markdown code {
-  border-radius: 4px;
-  padding: 0.15em 0.35em;
+  border-radius: 5px;
+  padding: 0.15em 0.38em;
   background: #f1f5f9;
-  font-size: 0.9em;
+  font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  font-size: 0.88em;
 }
 
 .document-preview-markdown pre {
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 16px;
-  background: #f8fafc;
+  background: #0f172a;
+  color: #e2e8f0;
   font-size: 13px;
   line-height: 1.7;
 }
@@ -131,6 +139,7 @@
   margin: 0;
   padding: 0;
   background: transparent;
+  color: inherit;
   font-size: inherit;
 }
 
@@ -138,7 +147,7 @@
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  margin: 20px 0;
+  margin: 18px 0;
 }
 
 .document-preview-markdown .document-preview-table table {
@@ -152,19 +161,19 @@
 .document-preview-markdown .document-preview-table th,
 .document-preview-markdown .document-preview-table td {
   border: 1px solid #e2e8f0;
-  padding: 10px 14px;
+  padding: 9px 14px;
   white-space: nowrap;
   overflow-wrap: normal;
   word-break: normal;
 }
 
 .document-preview-markdown .document-preview-table th {
-  background: #f1f5f9;
+  background: #f8fafc;
 }
 
 .document-preview-markdown a {
   overflow-wrap: anywhere;
-  color: #4f46e5;
+  color: #0f766e;
   text-decoration: underline;
 }
 
@@ -172,23 +181,23 @@
 .document-preview-markdown pre:focus-visible,
 .document-preview-table:focus-visible,
 .document-preview-source:focus-visible {
-  outline: 2px solid #6366f1;
+  outline: 2px solid #0f766e;
   outline-offset: 3px;
 }
 
 @media (max-width: 575px) {
   .document-preview-drawer .ant-drawer-header {
-    padding: 16px;
+    padding: 14px 16px;
   }
 
   .document-preview-toolbar,
   .document-preview-scroll {
-    padding: 16px;
+    padding: 14px 16px;
   }
 
   .document-preview-markdown,
   .document-preview-source {
     padding: 18px;
-    font-size: 14px;
+    font-size: 13.5px;
   }
 }
