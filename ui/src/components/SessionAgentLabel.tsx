@@ -1,4 +1,4 @@
-import { RobotOutlined } from "@ant-design/icons";
+import { AppstoreOutlined } from "@ant-design/icons";
 import type { AgentVO } from "../api/api.ts";
 
 export interface SessionAgentCatalog {
@@ -42,8 +42,8 @@ export default function SessionAgentLabel({ agentId, catalog, compact = false, c
       className={`inline-flex max-w-full min-w-0 items-center gap-1.5 text-slate-500 ${className}`}
       title={savedAgentId ? `${detail}\nAgent ID：${savedAgentId}` : detail}
     >
-      <RobotOutlined aria-hidden className="shrink-0 text-accent/80" />
-      <span className={compact ? "min-w-0 truncate" : "min-w-0 break-words"}>Agent：{name}</span>
+      <AppstoreOutlined aria-hidden className="shrink-0 text-ink-muted" />
+      <span className={compact ? "min-w-0 truncate" : "min-w-0 break-words"}>助手：{name}</span>
     </span>
   );
 }

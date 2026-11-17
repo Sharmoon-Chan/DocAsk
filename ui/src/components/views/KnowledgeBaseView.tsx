@@ -205,7 +205,7 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
       render: (_: unknown, record: DocumentWithIngestion) => {
         const stage = describeIngestionStatus(record.indexStatus);
         if (!stage) {
-          return <Text type="secondary" className="text-xs">—</Text>;
+          return <Text type="secondary" className="text-xs">未索引</Text>;
         }
         const retryable =
           !readOnly && !record.readOnly && stage.retryable && Boolean(record.jobId);
@@ -250,14 +250,11 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
       <div className="h-full overflow-y-auto bg-paper p-5 sm:p-8">
         <div className="mx-auto max-w-5xl">
           <div className="border-b border-slate-200 pb-5">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-border bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
-              <GlobalOutlined /> 公开资料库 · 正文分块索引
-            </span>
-            <Title level={2} className="mt-3! mb-2! tracking-tight text-ink!">
+            <Title level={2} className="mb-2! tracking-tight text-ink!">
               公开知识库
             </Title>
             <Paragraph className="mb-0! max-w-2xl text-sm leading-6 text-ink-soft">
-              浏览当前挂载的公开项目资料与高频技术学习资料，可直接阅读 Markdown 原文与源码，或在体验台中发起带引用检索的问答。
+              浏览当前挂载的公开项目资料与技术整理，可直接阅读 Markdown 原文与源码，或在体验台发起引用检索问答。
             </Paragraph>
           </div>
 
@@ -271,14 +268,11 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
                   className="arch-card arch-card-interactive flex flex-col justify-between p-5"
                 >
                   <div className="flex items-start gap-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-accent-border bg-accent-soft text-xl text-accent">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-lg text-slate-600">
                       <BookOutlined />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <span className="inline-block rounded bg-slate-100 px-2 py-0.5 font-mono text-[10.5px] font-semibold text-slate-600">
-                        公开资料 · 只读
-                      </span>
-                      <Title level={4} className="mt-1.5! mb-1.5! text-base! font-bold! text-ink!">
+                      <Title level={4} className="mt-0! mb-1.5! text-[15px]! font-semibold! text-ink!">
                         {knowledgeBase.name}
                       </Title>
                       <Paragraph className="mb-0! text-xs leading-5 text-ink-soft">
@@ -287,8 +281,8 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
                     </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+                    <span className="text-xs text-slate-400">只读公开资料</span>
                     <Button
-                      type="primary"
                       size="small"
                       onClick={() => navigate(`/knowledge-base/${knowledgeBase.knowledgeBaseId}`)}
                     >
@@ -356,19 +350,16 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
         )}
 
         <div className="arch-card mb-4 p-5">
-          <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-4 sm:flex sm:flex-wrap">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-accent-border bg-accent-soft text-2xl text-accent sm:h-14 sm:w-14">
+          <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-start gap-4 sm:flex sm:flex-wrap">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xl text-slate-600 sm:h-12 sm:w-12">
               <BookOutlined />
             </div>
             <div className="min-w-0 flex-1">
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                <Tag
-                  className="m-0! max-w-full whitespace-normal!"
-                  color={isPublic ? "cyan" : "green"}
-                  icon={isPublic ? <GlobalOutlined /> : <LockOutlined />}
-                >
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
+                  {isPublic ? <GlobalOutlined /> : <LockOutlined />}
                   {isPublic ? "公开演示库" : "私有 · 仅当前账号可见"}
-                </Tag>
+                </span>
               </div>
               <Title level={3} className="mb-1! break-words text-ink!">
                 {currentKnowledgeBase.name}
@@ -394,9 +385,9 @@ const KnowledgeBaseContent: React.FC<{ knowledgeBaseId?: string }> = ({ knowledg
         </div>
 
         {readOnly && (
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-accent-border bg-accent-soft/75 p-4">
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-card">
             <span className="flex-1 text-sm leading-6 text-ink-soft">
-              点击任意 Markdown 文件名阅读原文与源码，也可以直接使用此知识库提问并核验来源位置。
+              点击任意 Markdown 文件名阅读原文与源码，或直接使用此知识库提问。
             </span>
             <Button
               type="primary"

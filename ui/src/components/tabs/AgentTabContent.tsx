@@ -1,14 +1,15 @@
-﻿import React, { useMemo } from "react";
+﻿import React from "react";
 import { Button, Dropdown, Modal } from "antd";
 import type { MenuProps } from "antd";
 import {
+  AppstoreOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   MoreOutlined,
 } from "@ant-design/icons";
 import type { AgentVO } from "../../api/api.ts";
-import { formatDateTime, getAgentEmoji } from "../../utils";
+import { formatDateTime } from "../../utils";
 
 interface AgentTabContentProps {
   agents: AgentVO[];
@@ -26,13 +27,6 @@ const AgentTabContent: React.FC<AgentTabContentProps> = ({
   onDeleteAgent,
 }) => {
   const [modal, modalHolder] = Modal.useModal();
-
-  const agentsWithEmoji = useMemo(() => {
-    return agents.map((agent) => ({
-      ...agent,
-      emoji: getAgentEmoji(agent.id),
-    }));
-  }, [agents]);
 
   const getContextMenuItems = (agent: AgentVO): MenuProps["items"] => {
     const items: MenuProps["items"] = [];
@@ -96,7 +90,7 @@ const AgentTabContent: React.FC<AgentTabContentProps> = ({
           </div>
         ) : (
           <div className="space-y-2">
-            {agentsWithEmoji.map((agent) => {
+            {agents.map((agent) => {
               const menuItems = getContextMenuItems(agent);
               const hasMenu = menuItems && menuItems.length > 0;
               return (
@@ -111,11 +105,11 @@ const AgentTabContent: React.FC<AgentTabContentProps> = ({
                       onSelectAgent(agent.id);
                     }
                   }}
-                  className="group relative w-full cursor-pointer rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-card transition-all duration-150 hover:-translate-y-px hover:border-accent/50 hover:shadow-card-hover"
+                  className="group relative w-full cursor-pointer rounded-xl border border-sketch bg-white px-3 py-2.5 shadow-card transition-[border-color,box-shadow] duration-150 hover:border-accent/50 hover:shadow-card-hover"
                 >
                   <div className="flex items-start gap-2.5">
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-base">
-                      {agent.emoji}
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-sketch bg-paper text-sm text-ink-soft">
+                      <AppstoreOutlined />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">

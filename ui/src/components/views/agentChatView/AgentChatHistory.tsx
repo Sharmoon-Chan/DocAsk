@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import XMarkdown from "@ant-design/x-markdown";
 import {
-  CheckCircleOutlined,
+  ControlOutlined,
   DownOutlined,
   FileSearchOutlined,
+  FileTextOutlined,
   ReloadOutlined,
-  RobotOutlined,
   ToolOutlined,
 } from "@ant-design/icons";
 import { Button } from "antd";
@@ -285,7 +285,7 @@ const CitationEntry: React.FC<{
 
   return (
     <section
-      className="mt-3.5 min-w-0 max-w-full rounded-xl border border-verified-border bg-verified-soft/65 text-xs"
+      className="mt-3.5 min-w-0 max-w-full rounded-lg border border-sketch bg-paper text-xs"
       aria-label="回答来源"
     >
       <button
@@ -293,32 +293,32 @@ const CitationEntry: React.FC<{
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded((value) => !value)}
-        className="flex min-h-10 w-full min-w-0 cursor-pointer flex-wrap items-center gap-x-2 gap-y-0.5 rounded-xl px-3.5 py-2 text-left transition-colors hover:bg-verified-soft"
+        className="flex min-h-10 w-full min-w-0 cursor-pointer flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg px-3.5 py-2 text-left transition-colors hover:bg-slate-100/70"
       >
         <FileSearchOutlined className="shrink-0 text-verified" />
-        <span className="min-w-0 flex-1 break-words font-semibold text-emerald-900">
-          已核验来源：{label}
+        <span className="min-w-0 flex-1 break-words font-semibold text-ink">
+          引用来源：{label}
         </span>
-        <span className="shrink-0 font-mono text-verified">共 {citations.length} 处引用</span>
-        <span className="flex shrink-0 items-center gap-1 font-semibold text-emerald-900">
-          {expanded ? "收起来源" : "查看全部依据"}
+        <span className="shrink-0 text-verified font-medium">共 {citations.length} 处</span>
+        <span className="flex shrink-0 items-center gap-1 font-medium text-accent">
+          {expanded ? "收起" : "展开依据"}
           <DownOutlined className={expanded ? "rotate-180 transition-transform duration-200" : "transition-transform duration-200"} />
         </span>
       </button>
       {expanded && (
-        <div id={panelId} className="border-t border-verified-border px-3.5 py-3">
+        <div id={panelId} className="border-t border-sketch px-3.5 py-3">
           <ul className="flex flex-col gap-3">
             {groups.map((group) => (
               <li key={group.key} className="min-w-0">
                 <p className="mb-1.5 break-all text-xs font-bold text-ink">
                   {group.documentName}
-                  <span className="ml-2 font-normal text-slate-400">本条文档 {group.citations.length} 处片段</span>
+                  <span className="ml-2 font-normal text-ink-muted">本条文档 {group.citations.length} 处片段</span>
                 </p>
                 <ul className="flex flex-col gap-2">
                   {group.citations.map((citation, index) => (
                     <li
                       key={citationKey(citation, index)}
-                      className="min-w-0 rounded-lg border border-slate-200 bg-white p-2.5 shadow-card"
+                      className="min-w-0 rounded-lg border border-sketch bg-white p-2.5 shadow-card"
                     >
                       <button
                         type="button"
@@ -331,18 +331,18 @@ const CitationEntry: React.FC<{
                         </span>
                         <span className="font-semibold text-ink">{citationPosition(citation)}</span>
                         {citationHeading(citation) && (
-                          <span className="min-w-0 break-words text-slate-500">{citationHeading(citation)}</span>
+                          <span className="min-w-0 break-words text-ink-muted">{citationHeading(citation)}</span>
                         )}
-                        <span className="ml-auto shrink-0 rounded-md border border-accent-border bg-accent-soft px-2 py-0.5 font-semibold text-accent transition-colors hover:bg-accent hover:text-white">
-                          查看原文 →
+                        <span className="ml-auto shrink-0 rounded border border-accent-border bg-accent-soft px-2 py-0.5 font-medium text-accent transition-colors hover:bg-accent hover:text-white">
+                          查看原文
                         </span>
                       </button>
-                      <p className="mt-1.5 break-words leading-5 text-slate-600">{citation.excerpt}</p>
-                      <p className="mt-1 break-all font-mono text-[11px] text-slate-400">
-                        SHA-256 {citation.source.sourceHash ? citation.source.sourceHash.slice(0, 16) : "无（旧版索引）"}
-                        {citation.chunkId ? ` · 片段 ${citation.chunkId}` : ""}
+                      <p className="mt-1.5 break-words leading-5 text-ink-soft">{citation.excerpt}</p>
+                      <p className="mt-1 break-all text-[11px] text-ink-muted">
+                        <span className="font-mono">SHA-256 {citation.source.sourceHash ? citation.source.sourceHash.slice(0, 16) : "无（旧版索引）"}</span>
+                        {citation.chunkId ? `，片段 ${citation.chunkId}` : ""}
                         {citation.indexVersion || citation.indexRevision
-                          ? ` · 索引 ${[citation.indexVersion, citation.indexRevision].filter(Boolean).join(" / ")}`
+                          ? `，索引 ${[citation.indexVersion, citation.indexRevision].filter(Boolean).join(" / ")}`
                           : ""}
                       </p>
                     </li>
@@ -457,17 +457,17 @@ const ProcessDisclosure: React.FC<{
       }}
     >
       <summary className="flex min-h-10 cursor-pointer flex-wrap items-center gap-x-2.5 gap-y-0.5 px-3.5 py-2 leading-6">
-        <RobotOutlined className="shrink-0 text-accent" />
+        <ControlOutlined className="shrink-0 text-accent" />
         <span className="font-semibold text-ink">{run ? "执行过程" : "工具记录"}</span>
         {status && <span className={`font-semibold ${RUN_STATUS_CLASSES[status]}`}>{RUN_STATUS_LABELS[status]}</span>}
-        {run && <span className="font-mono text-slate-500">耗时 {formatDuration(run.durationMs)}</span>}
+        {run && <span className="text-ink-muted">耗时 <span className="font-mono">{formatDuration(run.durationMs)}</span></span>}
         {run?.queueDurationMs != null && run.queueDurationMs >= 1000 && (
-          <span className="font-mono text-slate-400">排队 {formatDuration(run.queueDurationMs)}</span>
+          <span className="text-ink-muted">排队 <span className="font-mono">{formatDuration(run.queueDurationMs)}</span></span>
         )}
-        {toolCount > 0 && <span className="text-slate-500">{toolCalls.length} 次工具调用</span>}
-        {run?.modelName && <span className="rounded bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-500 border border-slate-200">{run.modelName}</span>}
+        {toolCount > 0 && <span className="text-ink-muted">{toolCalls.length} 次工具调用</span>}
+        {run?.modelName && <span className="rounded border border-sketch bg-white px-1.5 py-0.5 text-[11px] text-ink-muted">{run.modelName}</span>}
         {run?.traceIncomplete && <span className="text-amber-600">执行详情不完整</span>}
-        <span className="ml-auto shrink-0 font-semibold text-accent">查看过程</span>
+        <span className="ml-auto shrink-0 font-medium text-accent">查看过程</span>
       </summary>
       <div className="flex flex-col gap-2.5 border-t border-slate-200 px-3.5 py-3">
         {opened && run && canLoadTimeline && <RunTimeline runId={run.runId} />}
@@ -530,7 +530,7 @@ const RunOutcomeNotice: React.FC<{ run: RunSummaryView; onRetry?: () => void }> 
         <span className="font-semibold text-ink">{busy ? "本次回答" : "这次没有拿到回答"}</span>
         <span className={`font-semibold ${RUN_STATUS_CLASSES[status] ?? "text-slate-600"}`}>{RUN_STATUS_LABELS[status] ?? status}</span>
         {typeof run.durationMs === "number" && run.durationMs > 0 && (
-          <span className="font-mono text-slate-500">耗时 {(run.durationMs / 1000).toFixed(1)} s</span>
+          <span className="tabular-nums text-ink-muted">耗时 {(run.durationMs / 1000).toFixed(1)} 秒</span>
         )}
       </div>
       <p className={(busy ? "mt-1" : "mt-1.5") + " leading-5 text-slate-600"}>
@@ -839,8 +839,8 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
               <div key={turn.key} className="mb-6 min-w-0">
                 {turn.systems.map((message) => (
                   <div key={message.id} className="mb-3 flex justify-center">
-                    <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-600 shadow-card">
-                      <RobotOutlined className="text-accent" />
+                    <div className="flex items-center gap-1.5 rounded-md border border-sketch bg-white px-3 py-1 text-xs text-ink-soft shadow-card">
+                      <FileTextOutlined className="text-accent" />
                       <span className="break-words">{message.content}</span>
                     </div>
                   </div>
@@ -876,21 +876,17 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
                       <article className="arch-card p-4 sm:p-5">
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5 text-xs">
                           <div className="flex items-center gap-2">
-                            {citations.length > 0 ? (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-verified-border bg-verified-soft px-2.5 py-0.5 font-semibold text-verified">
-                                <CheckCircleOutlined />
-                                来源已核验 · {citations.length} 处依据
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 font-semibold text-slate-600">
-                                <RobotOutlined className="text-accent" />
-                                问档答复
+                            <FileTextOutlined className="text-accent" />
+                            <span className="font-semibold text-ink">问档答复</span>
+                            {citations.length > 0 && (
+                              <span className="text-verified font-medium">
+                                含 {citations.length} 处原文依据
                               </span>
                             )}
                           </div>
                           {answerRun && (
-                            <span className="font-mono text-[11px] text-slate-400">
-                              耗时 {formatDuration(answerRun.durationMs)}
+                            <span className="text-xs text-ink-muted">
+                              耗时 <span className="font-mono">{formatDuration(answerRun.durationMs)}</span>
                             </span>
                           )}
                         </div>
@@ -947,9 +943,9 @@ const AgentChatHistory: React.FC<AgentChatHistoryProps> = ({
                         type="button"
                         disabled={busy}
                         onClick={() => void onAskFollowUp?.(prompt)}
-                        className="min-h-10 max-w-full cursor-pointer rounded-xl border border-dashed border-slate-300 bg-white px-3.5 py-2 text-left text-xs font-semibold text-slate-700 shadow-card transition-all duration-150 hover:-translate-y-px hover:border-accent hover:bg-accent-soft hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+                        className="min-h-10 max-w-full cursor-pointer rounded-lg border border-sketch bg-white px-3.5 py-2 text-left text-xs font-medium text-ink shadow-card transition-[border-color,background-color,color] duration-150 hover:border-accent hover:bg-accent-soft hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        ↳ {prompt}
+                        追问：{prompt}
                       </button>
                     ))}
                   </div>

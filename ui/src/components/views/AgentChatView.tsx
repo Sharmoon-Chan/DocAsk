@@ -448,14 +448,14 @@ function SessionChatView({ sessionId, agentCatalog }: { sessionId: string; agent
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col bg-paper">
-      <div className="shrink-0 border-b border-slate-200 bg-white/90 px-4 py-2.5 backdrop-blur-sm sm:px-8">
+      <div className="shrink-0 border-b border-sketch bg-white px-4 py-2.5 sm:px-8">
         <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <button
               type="button"
               onClick={() => navigate("/chat")}
               aria-label="返回体验台"
-              className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-xs text-slate-600 transition-colors hover:border-accent hover:text-accent"
+              className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-sketch bg-paper text-xs text-ink-soft transition-colors hover:border-accent hover:text-accent"
             >
               <ArrowLeftOutlined />
             </button>
@@ -465,8 +465,8 @@ function SessionChatView({ sessionId, agentCatalog }: { sessionId: string; agent
                   {session.title || "与问档 DocAsk 对话"}
                 </span>
                 {IS_PUBLIC_DEMO && (
-                  <span className="shrink-0 rounded-full border border-accent-border bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent">
-                    我的体验记录
+                  <span className="shrink-0 rounded-md border border-sketch bg-paper px-2 py-0.5 text-xs font-medium text-ink-soft">
+                    我的记录
                   </span>
                 )}
               </div>
@@ -475,18 +475,14 @@ function SessionChatView({ sessionId, agentCatalog }: { sessionId: string; agent
           </div>
 
           <span
-            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
+            role="status"
+            className={`inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 text-xs font-medium ${
               connected
-                ? "border-verified-border bg-verified-soft text-verified"
+                ? "border-sketch bg-paper text-ink-soft"
                 : "border-amber-200 bg-amber-50 text-amber-700"
             }`}
           >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                connected ? "bg-verified" : "animate-pulse bg-amber-500"
-              }`}
-            />
-            {connected ? "SSE 已连接" : connectionFailed ? "连接已断开，正在重试…" : "正在连接…"}
+            {connected ? "连接正常" : connectionFailed ? "连接中断，正在重试" : "连接中"}
           </span>
         </div>
       </div>
@@ -508,7 +504,7 @@ function SessionChatView({ sessionId, agentCatalog }: { sessionId: string; agent
         </Suspense>
       </LazyBoundary>
       <div
-        className="shrink-0 border-t border-slate-200 bg-white/90 backdrop-blur-sm"
+        className="shrink-0 border-t border-sketch bg-white"
         style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto w-full max-w-4xl px-4 pt-3 sm:px-8">

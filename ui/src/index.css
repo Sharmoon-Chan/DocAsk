@@ -1,12 +1,14 @@
+/* Hallmark · genre: modern-minimal · built: DocAsk · redesign: polish · surface: absolute */
+/* Hallmark · pre-emit critique: P4 H5 E5 S4 R5 V4 · weakest: R, stripped promo bars, redundant pills and toy icons */
+
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
 /* ============================================================
-   问档 DocAsk 设计系统 — 「瑞士档案布局 × 精密工程配色」
+   问档 DocAsk 设计系统
    - 画布 #F8FAFC / 纯白卡片 #FFFFFF / 沉降面板 #F1F5F9
    - 主文字 #0F172A / 次要 #475569 / 辅助 #64748B
-   - 主品牌色：深黛青 #0F766E（交互、选中、主行动）
-   - 语义色：核验翡翠 #059669 / 提示琥珀 #B45309 / 警示玫瑰 #BE123C
+   - 主品牌色：深黛青 #0F766E / 核验翡翠 #059669
    ============================================================ */
 
 :root {
@@ -14,7 +16,9 @@
   --eb-primary-hover: #115e59;
   --eb-primary-soft: #f0fdfa;
   --eb-primary-border: #99f6e4;
+  --eb-selection-bg: #ccfbf1;
   --eb-ink: #0f172a;
+  --eb-pencil: #334155;
   --eb-ink-soft: #475569;
   --eb-ink-muted: #64748b;
   --eb-paper: #f8fafc;
@@ -22,10 +26,19 @@
   --eb-surface-soft: #f1f5f9;
   --eb-line: #e2e8f0;
   --eb-line-strong: #cbd5e1;
+  --eb-scroll-thumb: #cbd5e1;
+  --eb-scroll-thumb-hover: #94a3b8;
   --eb-verified: #059669;
   --eb-verified-soft: #ecfdf5;
   --eb-verified-border: #a7f3d0;
-  --eb-radius-card: 14px;
+  --eb-code-bg: #0f172a;
+  --eb-code-ink: #e2e8f0;
+  --eb-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.03);
+  --eb-shadow-card-hover: 0 2px 8px rgba(15, 23, 42, 0.05);
+  --eb-shadow-modal: 0 8px 20px rgba(15, 23, 42, 0.08);
+  --eb-radius-card: 12px;
+  --eb-font-sans: "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  --eb-font-mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
 }
 
 html,
@@ -35,15 +48,22 @@ body,
   margin: 0;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   color: var(--eb-ink);
-  background:
-    radial-gradient(circle at 86% -6%, rgba(15, 118, 110, 0.055), transparent 42%),
-    radial-gradient(circle at -4% 102%, rgba(5, 150, 105, 0.045), transparent 38%),
-    var(--eb-paper);
-  font-family: "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  background: var(--eb-paper);
+  font-family: var(--eb-font-sans);
   font-weight: 450;
   -webkit-font-smoothing: antialiased;
+}
+
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active {
+  transform: translateY(0.5px);
 }
 
 button:focus-visible,
@@ -56,45 +76,41 @@ a:focus-visible {
 }
 
 ::selection {
-  background: #ccfbf1;
+  background: var(--eb-selection-bg);
   color: var(--eb-ink);
 }
 
-/* ---------- 精密工程卡片与结构分隔 ---------- */
+/* ---------- 工程卡片与结构分隔 ---------- */
 
 .arch-card {
   border: 1px solid var(--eb-line);
   background: var(--eb-surface);
   border-radius: var(--eb-radius-card);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--eb-shadow-card);
   transition:
-    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.18s ease-out,
+    box-shadow 0.15s ease-out,
     border-color 0.15s ease-out,
     background-color 0.15s ease-out;
 }
 
 .arch-card-interactive:hover {
-  transform: translateY(-1px);
   border-color: var(--eb-line-strong);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 118, 110, 0.08);
+  box-shadow: var(--eb-shadow-card-hover);
 }
 
 .arch-card-featured {
-  border: 1.5px solid var(--eb-primary);
-  background: linear-gradient(180deg, #f0fdfa 0%, #ffffff 100%);
+  border: 1px solid var(--eb-primary-border);
+  background: var(--eb-surface);
   border-radius: var(--eb-radius-card);
-  box-shadow: 0 4px 16px rgba(15, 118, 110, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--eb-shadow-card);
   transition:
-    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.18s ease-out,
+    box-shadow 0.15s ease-out,
     border-color 0.15s ease-out;
 }
 
 .arch-card-featured:hover {
-  transform: translateY(-1px);
-  border-color: var(--eb-primary-hover);
-  box-shadow: 0 8px 24px rgba(15, 118, 110, 0.13);
+  border-color: var(--eb-primary);
+  box-shadow: var(--eb-shadow-card-hover);
 }
 
 .arch-divider {
@@ -105,17 +121,17 @@ a:focus-visible {
   border-top: 1px dashed var(--eb-line-strong);
 }
 
-/* 滚动条：克制细条 */
+/* 滚动条 */
 ::-webkit-scrollbar {
   width: 7px;
   height: 7px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--eb-scroll-thumb);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--eb-scroll-thumb-hover);
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -143,7 +159,7 @@ a:focus-visible {
   overflow: hidden;
 }
 
-/* ---------- Ant Design 统一精调（精密工程风格） ---------- */
+/* ---------- Ant Design 统一精调 ---------- */
 
 .ant-tabs .ant-tabs-tab {
   font-weight: 600;
@@ -158,8 +174,8 @@ a:focus-visible {
 
 .ant-tabs .ant-tabs-ink-bar {
   background: var(--eb-primary);
-  border-radius: 999px;
-  height: 2.5px;
+  border-radius: 2px;
+  height: 2px;
 }
 
 .ant-tabs .ant-tabs-tab:hover {
@@ -172,7 +188,7 @@ a:focus-visible {
 
 .ant-card {
   border-color: var(--eb-line);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--eb-shadow-card);
 }
 
 .ant-modal .ant-modal-content,
@@ -182,12 +198,12 @@ a:focus-visible {
 
 .ant-modal .ant-modal-content {
   border: 1px solid var(--eb-line);
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+  box-shadow: var(--eb-shadow-modal);
 }
 
 .ant-tag {
-  border-radius: 999px;
-  font-weight: 600;
+  border-radius: 6px;
+  font-weight: 500;
 }
 
 .ant-empty .ant-empty-description {
@@ -201,7 +217,7 @@ a:focus-visible {
 }
 
 .ant-bubble .ant-bubble-content {
-  border-radius: 14px;
+  border-radius: 12px;
   min-width: 0;
   max-width: 100%;
 }
@@ -222,6 +238,7 @@ a:focus-visible {
   margin-top: 1em;
   margin-bottom: 0.45em;
   line-height: 1.4;
+  text-wrap: balance;
 }
 
 .answer-markdown h3 {
@@ -247,12 +264,12 @@ a:focus-visible {
 }
 
 .answer-markdown code {
-  font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  font-family: var(--eb-font-mono);
   font-size: 0.875em;
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--eb-surface-soft);
+  color: var(--eb-ink);
   padding: 0.12em 0.38em;
-  border-radius: 5px;
+  border-radius: 4px;
 }
 
 .answer-markdown pre,
@@ -262,10 +279,10 @@ a:focus-visible {
 }
 
 .answer-markdown pre {
-  background: #0f172a;
-  color: #e2e8f0;
-  padding: 12px 14px;
-  border-radius: 10px;
+  background: var(--eb-code-bg);
+  color: var(--eb-code-ink);
+  padding: 12px 16px;
+  border-radius: 8px;
   margin: 0.7em 0;
 }
 
@@ -284,17 +301,17 @@ a:focus-visible {
 .answer-markdown th,
 .answer-markdown td {
   border: 1px solid var(--eb-line);
-  padding: 6px 10px;
+  padding: 8px 12px;
   font-size: 0.85em;
 }
 
 .answer-markdown th {
-  background: #f8fafc;
+  background: var(--eb-paper);
   font-weight: 600;
 }
 
 .answer-markdown blockquote {
-  border-left: 3px solid var(--eb-primary);
+  border-left: 2px solid var(--eb-primary);
   background: var(--eb-primary-soft);
   padding: 8px 12px;
   border-radius: 0 8px 8px 0;

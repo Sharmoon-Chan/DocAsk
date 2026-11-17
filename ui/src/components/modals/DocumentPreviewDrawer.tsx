@@ -90,7 +90,6 @@ function MarkdownImage({ src, alt, title }: ComponentProps) {
       src={url}
       alt={description}
       title={typeof title === "string" ? title : undefined}
-      loading="lazy"
       referrerPolicy="no-referrer"
     />
   );

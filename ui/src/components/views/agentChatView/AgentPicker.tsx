@@ -1,6 +1,5 @@
 import { Select } from "antd";
 import { DownOutlined } from "@ant-design/icons";
-import { getAgentEmoji } from "../../../utils";
 import type { AgentVO } from "../../../api/api.ts";
 
 interface AgentPickerProps {
@@ -29,7 +28,7 @@ export default function AgentPicker({ agents, value, loading, onChange }: AgentP
       style={{ maxWidth: "100%" }}
       suffixIcon={<DownOutlined className="text-slate-400" />}
       placeholder={loading ? "正在连接助手…" : "暂无可用助手"}
-      options={agents.map((agent) => ({ value: agent.id, label: `${getAgentEmoji(agent.id)} ${agent.name}` }))}
+      options={agents.map((agent) => ({ value: agent.id, label: agent.name }))}
     />
   );
 }

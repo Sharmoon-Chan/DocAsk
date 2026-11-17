@@ -3,8 +3,6 @@ import { Button, Empty, Spin, Typography } from "antd";
 import {
   ArrowLeftOutlined,
   ArrowRightOutlined,
-  CheckCircleOutlined,
-  HistoryOutlined,
   MessageOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useParams } from "react-router-dom";
@@ -41,14 +39,11 @@ function ShowcaseList({ agentCatalog }: { agentCatalog: SessionAgentCatalog }) {
     <div className="h-full overflow-y-auto bg-paper p-5 sm:p-8">
       <div className="mx-auto max-w-5xl">
         <div className="border-b border-slate-200 pb-5">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-verified-border bg-verified-soft px-2.5 py-0.5 text-xs font-semibold text-verified">
-            <CheckCircleOutlined /> 已审核真实运行实录
-          </span>
-          <Title level={2} className="mt-3! mb-2! tracking-tight text-ink!">
+          <Title level={2} className="mb-2! tracking-tight text-ink!">
             精选问答示例
           </Title>
           <Paragraph className="mb-1! max-w-2xl text-sm leading-6 text-ink-soft">
-            以下问答均基于公开资料真实执行、未经手动改写并核对引用后发布。点击任意条目即可零等待查看答案与对应原文行号；查看示例不会触发模型请求。
+            以下问答均基于公开资料真实执行，未经手动改写，已核对原文引用。点击条目可直接查看完整回答、工具调用与原文行号。
           </Paragraph>
           <p className="text-xs text-ink-muted">
             这里展示全局公开精选；你自己在体验台发起的提问保存在「我的记录」中。
@@ -67,31 +62,24 @@ function ShowcaseList({ agentCatalog }: { agentCatalog: SessionAgentCatalog }) {
           </div>
         ) : (
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {showcases.map((showcase, index) => (
+            {showcases.map((showcase) => (
               <button
                 key={showcase.id}
                 type="button"
-                className="group arch-card arch-card-interactive flex cursor-pointer items-start gap-3.5 p-4 text-left"
+                className="group arch-card arch-card-interactive flex cursor-pointer flex-col justify-between gap-3 p-4 text-left"
                 onClick={() => navigate(`/showcase/${showcase.id}`)}
               >
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-accent-border bg-accent-soft font-mono text-xs font-bold text-accent">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
-                    <HistoryOutlined />
-                    <span>CASE {String(index + 1).padStart(2, "0")} · 只读核验</span>
-                  </span>
-                  <span className="mt-1 block line-clamp-2 text-sm font-bold leading-5 text-ink transition-colors group-hover:text-accent">
+                <span className="block min-w-0">
+                  <span className="block line-clamp-2 text-[14.5px] font-semibold leading-5 text-ink transition-colors group-hover:text-accent">
                     {showcase.title || "示例对话"}
                   </span>
                   <span className="mt-2 block">
                     <SessionAgentLabel agentId={showcase.agentId} catalog={agentCatalog} compact className="text-xs" />
                   </span>
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-accent">
-                    查看原文依据与执行记录
-                    <ArrowRightOutlined className="text-[11px] transition-transform duration-150 group-hover:translate-x-0.5" />
-                  </span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-accent">
+                  查看原文依据与执行记录
+                  <ArrowRightOutlined className="text-[11px] transition-transform duration-150 group-hover:translate-x-0.5" />
                 </span>
               </button>
             ))}
@@ -146,8 +134,8 @@ function ShowcaseDetail({ id, agentCatalog }: { id: string; agentCatalog: Sessio
             <Button type="text" size="small" icon={<ArrowLeftOutlined />} onClick={() => navigate("/showcase")}>
               全部示例对话
             </Button>
-            <span className="rounded-full border border-accent-border bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
-              示例对话 · 只读
+            <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
+              只读实录
             </span>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">

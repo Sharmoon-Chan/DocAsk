@@ -1,7 +1,10 @@
+/* Hallmark · genre: modern-minimal · built: DocAsk · redesign: polish · surface: absolute */
+/* Hallmark · pre-emit critique: P4 H5 E5 S4 R5 V4 · weakest: R, normalized drawer tokens and 4px rhythm */
+
 .document-preview-filename {
   overflow-wrap: anywhere;
   line-height: 1.5;
-  color: #0f172a;
+  color: var(--eb-ink);
 }
 
 .document-preview-toolbar {
@@ -10,8 +13,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #ffffff;
+  border-bottom: 1px solid var(--eb-line);
+  background: var(--eb-surface);
   padding: 12px 24px;
 }
 
@@ -23,7 +26,7 @@
   overflow-x: hidden;
   overscroll-behavior: contain;
   padding: 20px 24px;
-  background: #f8fafc;
+  background: var(--eb-paper);
 }
 
 .document-preview-status {
@@ -40,14 +43,14 @@
   min-width: 0;
   max-width: 100%;
   margin: 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  border: 1px solid var(--eb-line);
+  border-radius: var(--eb-radius-card);
   padding: 24px 28px;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--eb-surface);
+  color: var(--eb-ink);
   font-size: 14.5px;
   line-height: 1.8;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--eb-shadow-card);
 }
 
 .document-preview-markdown {
@@ -60,10 +63,11 @@
 .document-preview-markdown h4,
 .document-preview-markdown h5,
 .document-preview-markdown h6 {
-  margin: 26px 0 12px;
+  margin: 24px 0 12px;
   font-weight: 700;
   line-height: 1.38;
-  color: #0f172a;
+  color: var(--eb-ink);
+  text-wrap: balance;
 }
 
 .document-preview-markdown h1 {
@@ -83,12 +87,12 @@
 }
 
 .document-preview-markdown blockquote {
-  margin: 18px 0;
-  border-left: 3px solid #0f766e;
+  margin: 16px 0;
+  border-left: 2px solid var(--eb-primary);
   border-radius: 0 8px 8px 0;
-  padding: 10px 16px;
-  background: #f0fdfa;
-  color: #334155;
+  padding: 12px 16px;
+  background: var(--eb-primary-soft);
+  color: var(--eb-pencil);
 }
 
 .document-preview-markdown img {
@@ -105,7 +109,7 @@
   overflow-wrap: normal;
   word-break: normal;
   tab-size: 4;
-  font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  font-family: var(--eb-font-mono);
   font-size: 13px;
 }
 
@@ -117,19 +121,19 @@
 }
 
 .document-preview-markdown code {
-  border-radius: 5px;
+  border-radius: 4px;
   padding: 0.15em 0.38em;
-  background: #f1f5f9;
-  font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  background: var(--eb-surface-soft);
+  font-family: var(--eb-font-mono);
   font-size: 0.88em;
 }
 
 .document-preview-markdown pre {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid var(--eb-line);
+  border-radius: 8px;
   padding: 16px;
-  background: #0f172a;
-  color: #e2e8f0;
+  background: var(--eb-code-bg);
+  color: var(--eb-code-ink);
   font-size: 13px;
   line-height: 1.7;
 }
@@ -147,7 +151,7 @@
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  margin: 18px 0;
+  margin: 16px 0;
 }
 
 .document-preview-markdown .document-preview-table table {
@@ -160,20 +164,20 @@
 
 .document-preview-markdown .document-preview-table th,
 .document-preview-markdown .document-preview-table td {
-  border: 1px solid #e2e8f0;
-  padding: 9px 14px;
+  border: 1px solid var(--eb-line);
+  padding: 8px 12px;
   white-space: nowrap;
   overflow-wrap: normal;
   word-break: normal;
 }
 
 .document-preview-markdown .document-preview-table th {
-  background: #f8fafc;
+  background: var(--eb-paper);
 }
 
 .document-preview-markdown a {
   overflow-wrap: anywhere;
-  color: #0f766e;
+  color: var(--eb-primary);
   text-decoration: underline;
 }
 
@@ -181,23 +185,23 @@
 .document-preview-markdown pre:focus-visible,
 .document-preview-table:focus-visible,
 .document-preview-source:focus-visible {
-  outline: 2px solid #0f766e;
+  outline: 2px solid var(--eb-primary);
   outline-offset: 3px;
 }
 
 @media (max-width: 575px) {
   .document-preview-drawer .ant-drawer-header {
-    padding: 14px 16px;
+    padding: 12px 16px;
   }
 
   .document-preview-toolbar,
   .document-preview-scroll {
-    padding: 14px 16px;
+    padding: 12px 16px;
   }
 
   .document-preview-markdown,
   .document-preview-source {
-    padding: 18px;
+    padding: 16px;
     font-size: 13.5px;
   }
 }

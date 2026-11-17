@@ -94,7 +94,7 @@ const ChatTabContent: React.FC<{ onNavigate?: () => void }> = ({ onNavigate }) =
                       handleSelectChatSession(session.id);
                     }
                   }}
-                  className={`group relative w-full cursor-pointer rounded-xl border px-3 py-2.5 transition-all duration-150 ${
+                  className={`group relative w-full cursor-pointer rounded-xl border px-3 py-2.5 transition-[border-color,background-color,box-shadow] duration-150 ${
                     active
                       ? "border-accent bg-accent-soft/70 shadow-card"
                       : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"

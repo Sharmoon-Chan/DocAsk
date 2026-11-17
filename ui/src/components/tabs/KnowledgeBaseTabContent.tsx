@@ -1,9 +1,8 @@
-﻿import React, { useMemo } from "react";
+﻿import React from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "antd";
 import { PlusOutlined, BookOutlined, LockOutlined, GlobalOutlined } from "@ant-design/icons";
 import type { KnowledgeBase } from "../../types";
-import { getKnowledgeBaseEmoji } from "../../utils";
 import { IS_PUBLIC_DEMO } from "../../config.ts";
 
 interface KnowledgeBaseTabContentProps {
@@ -18,18 +17,12 @@ const KnowledgeBaseTabContent: React.FC<KnowledgeBaseTabContentProps> = ({
   onSelectKnowledgeBase,
 }) => {
   const { pathname } = useLocation();
-  const knowledgeBasesWithEmoji = useMemo(() => {
-    return knowledgeBases.map((kb) => ({
-      ...kb,
-      emoji: getKnowledgeBaseEmoji(kb.knowledgeBaseId),
-    }));
-  }, [knowledgeBases]);
 
   const groups = IS_PUBLIC_DEMO
-    ? [{ title: "公开演示库", publicResource: true, items: knowledgeBasesWithEmoji }]
+    ? [{ title: "公开演示库", publicResource: true, items: knowledgeBases }]
     : [
-      { title: "我的知识库", publicResource: false, items: knowledgeBasesWithEmoji.filter((kb) => !kb.publicResource) },
-      { title: "公开演示库", publicResource: true, items: knowledgeBasesWithEmoji.filter((kb) => kb.publicResource) },
+      { title: "我的知识库", publicResource: false, items: knowledgeBases.filter((kb) => !kb.publicResource) },
+      { title: "公开演示库", publicResource: true, items: knowledgeBases.filter((kb) => kb.publicResource) },
     ];
 
   return (
@@ -76,15 +69,15 @@ const KnowledgeBaseTabContent: React.FC<KnowledgeBaseTabContentProps> = ({
                           aria-label={`打开知识库 ${kb.name}`}
                           key={kb.knowledgeBaseId}
                           onClick={() => onSelectKnowledgeBase?.(kb.knowledgeBaseId)}
-                          className={`group w-full cursor-pointer rounded-xl border px-3 py-2.5 text-left transition-all duration-150 ${
+                          className={`group w-full cursor-pointer rounded-xl border px-3 py-2.5 text-left transition-[border-color,background-color] duration-150 ${
                             active
                               ? "border-accent bg-accent-soft/70 shadow-card"
                               : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/80"
                           }`}
                         >
                           <div className="flex items-start gap-2.5">
-                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-base">
-                              {kb.emoji}
+                            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-600">
+                              <BookOutlined />
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="truncate text-xs font-semibold leading-5 text-ink">

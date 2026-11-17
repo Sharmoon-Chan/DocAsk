@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Button, Form, Input, Typography } from "antd";
+import { Alert, Button, Form, Input } from "antd";
 import { ArrowLeftOutlined, LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useAccount } from "../../contexts/accountState.ts";
 import ExoBrainLogo from "../ExoBrainLogo.tsx";
@@ -25,22 +25,21 @@ export default function LoginView() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-paper px-5 py-10">
       <div className="w-full max-w-md">
-        <div className="mb-7 flex items-center justify-center gap-3 animate-pop-in">
+        <div className="mb-7 flex items-center justify-center gap-3">
           <ExoBrainLogo className="h-11 w-11 shadow-card" />
           <div>
-            <span className="block text-xl font-extrabold tracking-tight text-ink">问档 DocAsk</span>
+            <span className="block text-xl font-bold tracking-tight text-ink">问档 DocAsk</span>
             <span className="block text-xs font-medium text-ink-muted">账号隔离与系统模型管理后台</span>
           </div>
         </div>
 
         <section
-          className="arch-card p-6 sm:p-8 animate-pop-in"
-          style={{ animationDelay: "50ms" }}
+          className="arch-card p-6 sm:p-8"
           aria-labelledby="account-login-title"
         >
-          <Typography.Title level={2} id="account-login-title" className="mb-1.5! text-xl! font-bold! text-ink!">
+          <h2 id="account-login-title" className="mb-1.5 text-xl font-bold text-ink">
             账号工作区登录
-          </Typography.Title>
+          </h2>
           <p className="mb-6 text-sm leading-6 text-ink-soft">
             登录后管理你的私有智能体、知识库、聊天记录与系统模型。
           </p>

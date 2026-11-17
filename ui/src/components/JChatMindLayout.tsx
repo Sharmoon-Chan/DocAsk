@@ -106,7 +106,7 @@ export default function JChatMindLayout() {
             </Button>
           </div>
         ) : (
-          <span className="rounded-full border border-accent-border bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
+          <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
             {account?.user?.role === "ADMIN" ? "管理员" : "工作区"}
           </span>
         )}
@@ -142,11 +142,11 @@ export default function JChatMindLayout() {
             </button>
           </Tooltip>
 
-          <Tooltip title={IS_PUBLIC_DEMO ? "面试官体验台" : "对话工作区"} placement="right">
+          <Tooltip title={IS_PUBLIC_DEMO ? "体验台" : "对话工作区"} placement="right">
             <button
               type="button"
               onClick={() => navigate("/chat")}
-              aria-label={IS_PUBLIC_DEMO ? "面试官体验台" : "对话工作区"}
+              aria-label={IS_PUBLIC_DEMO ? "体验台" : "对话工作区"}
               className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border text-sm transition-colors ${
                 isHome
                   ? "border-ink bg-ink text-white"
@@ -282,29 +282,29 @@ export default function JChatMindLayout() {
 
       {/* 右侧主舞台：顶部命令栏 + 页面内容 */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="hidden h-13 shrink-0 items-center justify-between border-b border-slate-200 bg-white/85 px-6 backdrop-blur-md md:flex">
+        <header className="hidden h-13 shrink-0 items-center justify-between border-b border-sketch bg-white px-6 md:flex">
           <div className="flex min-w-0 items-center gap-6">
             <button
               type="button"
               onClick={() => navigate("/")}
               className="flex shrink-0 cursor-pointer items-center gap-2.5 text-left"
             >
-              <span className="text-sm font-extrabold tracking-tight text-ink">问档 DocAsk</span>
-              <span className="hidden border-l border-slate-200 pl-2.5 text-xs font-medium text-slate-500 xl:inline">
-                {IS_PUBLIC_DEMO ? "Spring AI 可核验文档 Agent" : "账号工作区"}
+              <span className="text-sm font-bold tracking-tight text-ink">问档 DocAsk</span>
+              <span className="hidden border-l border-slate-200 pl-2.5 text-xs text-slate-500 xl:inline">
+                {IS_PUBLIC_DEMO ? "文档问答与引用溯源" : "账号工作区"}
               </span>
             </button>
 
-            <nav aria-label="顶部快捷切换" className="flex items-center gap-5 text-[13px] font-semibold">
+            <nav aria-label="顶部快捷切换" className="flex items-center gap-6 text-[13px] font-medium">
               <button
                 type="button"
                 onClick={() => navigate("/chat")}
                 className={`relative cursor-pointer py-3.5 transition-colors ${
-                  isHome ? "text-ink" : "text-slate-500 hover:text-ink"
+                  isHome ? "font-semibold text-ink" : "text-slate-500 hover:text-ink"
                 }`}
               >
-                <span>01 {IS_PUBLIC_DEMO ? "体验台" : "对话"}</span>
-                {isHome && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-accent" />}
+                <span>{IS_PUBLIC_DEMO ? "体验台" : "对话"}</span>
+                {isHome && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" />}
               </button>
 
               {IS_PUBLIC_DEMO && (
@@ -312,11 +312,11 @@ export default function JChatMindLayout() {
                   type="button"
                   onClick={() => navigate("/showcase")}
                   className={`relative cursor-pointer py-3.5 transition-colors ${
-                    isShowcase ? "text-ink" : "text-slate-500 hover:text-ink"
+                    isShowcase ? "font-semibold text-ink" : "text-slate-500 hover:text-ink"
                   }`}
                 >
-                  <span>02 精选实录</span>
-                  {isShowcase && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-accent" />}
+                  <span>精选实录</span>
+                  {isShowcase && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" />}
                 </button>
               )}
 
@@ -324,11 +324,11 @@ export default function JChatMindLayout() {
                 type="button"
                 onClick={() => navigate("/knowledge-base")}
                 className={`relative cursor-pointer py-3.5 transition-colors ${
-                  isKb ? "text-ink" : "text-slate-500 hover:text-ink"
+                  isKb ? "font-semibold text-ink" : "text-slate-500 hover:text-ink"
                 }`}
               >
-                <span>{IS_PUBLIC_DEMO ? "03 公开资料库" : "02 知识库"}</span>
-                {isKb && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-accent" />}
+                <span>{IS_PUBLIC_DEMO ? "公开资料库" : "知识库"}</span>
+                {isKb && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" />}
               </button>
 
               {!IS_PUBLIC_DEMO && account?.user?.role === "ADMIN" && (
@@ -337,21 +337,21 @@ export default function JChatMindLayout() {
                     type="button"
                     onClick={() => navigate("/users")}
                     className={`relative cursor-pointer py-3.5 transition-colors ${
-                      isUsers ? "text-ink" : "text-slate-500 hover:text-ink"
+                      isUsers ? "font-semibold text-ink" : "text-slate-500 hover:text-ink"
                     }`}
                   >
-                    <span>03 用户管理</span>
-                    {isUsers && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-accent" />}
+                    <span>用户管理</span>
+                    {isUsers && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" />}
                   </button>
                   <button
                     type="button"
                     onClick={() => navigate("/models")}
                     className={`relative cursor-pointer py-3.5 transition-colors ${
-                      isModels ? "text-ink" : "text-slate-500 hover:text-ink"
+                      isModels ? "font-semibold text-ink" : "text-slate-500 hover:text-ink"
                     }`}
                   >
-                    <span>04 系统模型</span>
-                    {isModels && <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-accent" />}
+                    <span>系统模型</span>
+                    {isModels && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-accent" />}
                   </button>
                 </>
               )}
@@ -360,12 +360,12 @@ export default function JChatMindLayout() {
                 type="button"
                 onClick={() => toggleHistoryPanel("chat")}
                 className={`relative flex cursor-pointer items-center gap-1.5 py-3.5 transition-colors ${
-                  panelOpen ? "text-accent" : "text-slate-500 hover:text-ink"
+                  panelOpen ? "font-semibold text-accent" : "text-slate-500 hover:text-ink"
                 }`}
               >
-                <span>{IS_PUBLIC_DEMO ? "04 我的记录" : "记录与助手"}</span>
+                <span>{IS_PUBLIC_DEMO ? "我的记录" : "记录与助手"}</span>
                 {chatSessions.length > 0 && (
-                  <span className="rounded-full bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-600">
+                  <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-medium text-slate-600">
                     {chatSessions.length}
                   </span>
                 )}
@@ -376,17 +376,16 @@ export default function JChatMindLayout() {
           <div className="flex shrink-0 items-center gap-2.5">
             {IS_PUBLIC_DEMO ? (
               <>
-                <span className="hidden items-center gap-1.5 rounded-full border border-accent-border bg-accent-soft px-2.5 py-1 text-xs font-semibold text-accent lg:inline-flex">
-                  <span className="h-1.5 w-1.5 rounded-full bg-verified" />
-                  公开执行器在线
+                <span className="hidden text-xs text-slate-400 lg:inline">
+                  公开只读演示
                 </span>
                 <Button size="small" href="/admin/" icon={<LoginOutlined />}>
-                  账号登录 /admin/
+                  账号登录
                 </Button>
               </>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="rounded-full border border-accent-border bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent">
+                <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs font-medium text-slate-600">
                   {account?.user?.role === "ADMIN" ? "管理员" : "成员账号"}
                 </span>
                 <Button
